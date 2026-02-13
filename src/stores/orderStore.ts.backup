@@ -1,0 +1,132 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { Order, OrderStatus, Table } from '../types';
+
+// 初始化桌位 5-22
+const initTables = (): Table[] =>
+  Array.from({ length: 18 }, (_, i) => ({
+    number: i + 5,
+    status: 'empty' as const,
+  }));
+
+interface OrderState {
+  orders: Order[];
+  tables: Table[];
+  addOrder: (order: Order) => void;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  getOrdersByTable: (tableNumber: number) => Order[];
+  getOrderById: (orderId: string) => Order | undefined;
+  occupyTable: (tableNumber: number) => void;
+  clearTable: (tableNumber: number) => void;
+  resetDaily: () => void;
+  rehydrate: () => void;
+}
+
+let orderCounter = 0;
+
+export const generateOrderId = (): string => {
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const num = String(++orderCounter).padStart(3, '0');
+  return `#${today}-${num}`;
+};
+
+export const useOrderStore = create<OrderState>()(
+  persist(
+    (set, get) => ({
+      orders: [],
+      tables: initTables(),
+      addOrder: (order) =>
+        set((s) => ({
+          orders: [order, ...s.orders],
+          tables: s.tables.map((t) =>
+            t.number === order.tableNumber
+              ? { ...t, status: 'occupied' as const, occupiedSince: order.createdAt }
+              : t
+          ),
+        })),
+      updateOrderStatus: (orderId, status) =>
+        set((s) => {
+          const updatedOrders = s.orders.map((o) =>
+            o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o
+          );
+
+          // 取消訂單時，若該桌已無任何未完成/未取消的訂單，自動清桌
+          let updatedTables = s.tables;
+          if (status === 'cancelled') {
+            const targetOrder = s.orders.find((o) => o.id === orderId);
+            if (targetOrder) {
+              const hasRemaining = updatedOrders.some(
+                (o) => o.tableNumber === targetOrder.tableNumber && o.status !== 'completed' && o.status !== 'cancelled'
+              );
+              if (!hasRemaining) {
+                updatedTables = s.tables.map((t) =>
+                  t.number === targetOrder.tableNumber
+                    ? { ...t, status: 'empty' as const, occupiedSince: undefined }
+                    : t
+                );
+              }
+            }
+          }
+
+          return { orders: updatedOrders, tables: updatedTables };
+        }),
+      getOrdersByTable: (tableNumber) =>
+        get().orders.filter((o) => o.tableNumber === tableNumber),
+      getOrderById: (orderId) => get().orders.find((o) => o.id === orderId),
+      occupyTable: (tableNumber) =>
+        set((s) => ({
+          tables: s.tables.map((t) =>
+            t.number === tableNumber
+              ? { ...t, status: 'occupied' as const, occupiedSince: new Date().toISOString() }
+              : t
+          ),
+        })),
+      clearTable: (tableNumber) =>
+        set((s) => ({
+          tables: s.tables.map((t) =>
+            t.number === tableNumber ? { ...t, status: 'empty' as const, occupiedSince: undefined } : t
+          ),
+          orders: s.orders.map((o) =>
+            o.tableNumber === tableNumber && o.status !== 'completed' && o.status !== 'cancelled'
+              ? { ...o, status: 'completed' as const, updatedAt: new Date().toISOString() }
+              : o
+          ),
+        })),
+      resetDaily: () => {
+        orderCounter = 0;
+        set(() => ({
+          orders: [],
+          tables: initTables(),
+        }));
+      },
+      rehydrate: () => {
+        // 強制重新從 localStorage 載入資料
+        const stored = localStorage.getItem('taro-order-store');
+        if (stored) {
+          try {
+            const { state } = JSON.parse(stored);
+            set(() => ({
+              orders: state.orders || [],
+              tables: state.tables || initTables(),
+            }));
+          } catch (e) {
+            console.error('Failed to rehydrate:', e);
+          }
+        }
+      },
+    }),
+    {
+      name: 'taro-order-store',
+      onRehydrateStorage: () => (state) => {
+        // 從已存在的訂單中恢復 counter，避免重複 ID
+        if (state?.orders.length) {
+          const maxNum = state.orders.reduce((max, o) => {
+            const match = o.id.match(/-(\d+)$/);
+            return match ? Math.max(max, parseInt(match[1], 10)) : max;
+          }, 0);
+          orderCounter = maxNum;
+        }
+      },
+    }
+  )
+);
