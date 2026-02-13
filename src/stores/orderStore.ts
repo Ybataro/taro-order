@@ -18,8 +18,6 @@ interface OrderState {
   resetDaily: () => Promise<void>;
 }
 
-let orderCounter = 0;
-
 export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
   tables: [],
