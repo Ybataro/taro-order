@@ -27,7 +27,6 @@ function todayString(): string {
 
 export default function OrdersPage() {
   const orders = useOrderStore((s) => s.orders);
-  const loading = useOrderStore((s) => s.loading);
   const fetchOrders = useOrderStore((s) => s.fetchOrders);
   const [activeFilter, setActiveFilter] = useState<'all' | OrderStatus>('all');
   const [selectedDate, setSelectedDate] = useState(todayString());
