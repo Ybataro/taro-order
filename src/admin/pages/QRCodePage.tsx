@@ -8,7 +8,7 @@ export default function QRCodePage() {
   const tables = useOrderStore((s) => s.tables);
   const fetchTables = useOrderStore((s) => s.fetchTables);
   const [selectedTables, setSelectedTables] = useState<number[]>([]);
-  const [baseUrl, setBaseUrl] = useState('http://192.168.18.3:5173');
+  const [baseUrl, setBaseUrl] = useState('https://taro-order.vercel.app');
   const [showCustomUrl, setShowCustomUrl] = useState(false);
 
   // 載入桌位資料
