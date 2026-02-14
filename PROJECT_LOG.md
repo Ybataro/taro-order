@@ -1,6 +1,45 @@
 # 阿爸的芋圓點餐系統 - 開發日誌
 
-## 📅 2026-02-14 開發記錄
+## 📅 2026-02-14 開發記錄（第二天）
+
+### 完成的功能
+
+1. **✅ 訂單編號改為每日流水號**
+   - 訂單編號從 1 開始遞增
+   - 交班歸零後重新從 1 開始
+   - 新增 `generateDailyOrderNumber` 函數
+
+2. **✅ 修正菜單預設分類問題**
+   - 修正頁面載入時沒有預設分類的 bug
+   - 自動選中第一個分類（蔗片冰區）
+
+3. **✅ Realtime 訂閱問題排查**
+   - 關閉所有資料表的 RLS（Row Level Security）
+   - 設定 replica identity 為 FULL（必要）
+   - 加入詳細的除錯日誌
+   - 加入 Realtime 明確配置
+   - 確認 `orders` 和 `tables` 已加入 publication
+
+4. **✅ 改善新訂單音效提醒**
+   - 優化音效播放邏輯
+   - 只有真正的新訂單才播放
+   - 加入瀏覽器相容性（webkitAudioContext）
+
+5. **✅ 建立專案文件**
+   - `PROJECT_LOG.md` - 完整開發記錄
+   - `CONTINUE_TOMORROW.md` - 明天繼續指南
+
+### 待解決問題
+
+1. **⚠️ Realtime 訂閱失敗**
+   - Supabase 設定都正確
+   - Publication、RLS、Replica Identity 都已設定
+   - 但訂閱時仍顯示 "❌ Realtime 訂閱失敗！"
+   - **下一步**：檢查 Netlify 環境變數、查看 Realtime logs
+
+---
+
+## 📅 2026-02-14 開發記錄（第一天）
 
 ### 🎯 今日完成的功能
 
