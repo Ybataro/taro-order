@@ -170,13 +170,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           schema: 'public',
           table: 'orders',
         },
-        async (payload) => {
+        (payload) => {
           console.log('═══════════════════════════════════');
           console.log('🎉 訂單變更事件:', payload.eventType);
           console.log('📊 完整 payload:', payload);
           console.log('═══════════════════════════════════');
           
-          const currentOrders = get().orders;
+          try {
+            const currentOrders = get().orders;
+            console.log('📋 當前訂單數:', currentOrders.length);
           
           if (payload.eventType === 'INSERT') {
             // 新增訂單：直接加入狀態（使用新陣列確保 React 偵測到變化）
@@ -205,6 +207,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             set({ orders: filteredOrders });
             console.log('🗑️ 訂單已刪除:', deletedId);
           }
+          } catch (error) {
+            console.error('❌ 處理訂單變更事件時發生錯誤:', error);
+          }
         }
       )
       .on(
@@ -214,10 +219,10 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           schema: 'public',
           table: 'tables',
         },
-        async (payload) => {
+        (payload) => {
           console.log('🪑 桌位變更事件:', payload.eventType, payload);
           // 重新載入桌位
-          await get().fetchTables();
+          get().fetchTables();
         }
       )
       .subscribe((status) => {
