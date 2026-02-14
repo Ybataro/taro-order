@@ -8,6 +8,7 @@ import OrdersPage from './admin/pages/OrdersPage';
 import MenuManagePage from './admin/pages/MenuManagePage';
 import TablesPage from './admin/pages/TablesPage';
 import QRCodePage from './admin/pages/QRCodePage';
+import AnalyticsPage from './admin/pages/AnalyticsPage';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/orders" replace />} />
           <Route path="orders" element={<OrdersPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="menu" element={<MenuManagePage />} />
           <Route path="tables" element={<TablesPage />} />
           <Route path="qrcode" element={<QRCodePage />} />

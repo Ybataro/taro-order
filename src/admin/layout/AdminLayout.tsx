@@ -1,9 +1,10 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { ClipboardList, UtensilsCrossed, Armchair, QrCode } from 'lucide-react';
+import { ClipboardList, UtensilsCrossed, Armchair, QrCode, BarChart3 } from 'lucide-react';
 import { useOrderStore } from '../../stores/orderStore';
 
 const navItems = [
   { to: '/admin/orders', icon: ClipboardList, label: '訂單管理' },
+  { to: '/admin/analytics', icon: BarChart3, label: '營業統計' },
   { to: '/admin/menu', icon: UtensilsCrossed, label: '菜單管理' },
   { to: '/admin/tables', icon: Armchair, label: '桌位管理' },
   { to: '/admin/qrcode', icon: QrCode, label: 'QR Code' },
