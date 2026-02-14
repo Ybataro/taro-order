@@ -1,0 +1,124 @@
+/* 列印樣式 - 出餐貼紙 */
+
+/* 列印時隱藏其他元素，只顯示貼紙 */
+@media print {
+  /* 強制隱藏所有元素 */
+  body > *:not(.label-print-container) {
+    display: none !important;
+  }
+  
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* 強制顯示貼紙容器 */
+  .label-print-container {
+    display: block !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* 強制顯示貼紙 */
+  .label-print {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: static !important;
+  }
+  
+  /* 強制顯示貼紙內所有元素 */
+  .label-print * {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* 設定頁面尺寸和邊距（符合 4x3 標籤紙規格） */
+  @page {
+    size: 40mm 30mm;
+    margin: 15mm 10mm; /* 上下15mm，左右10mm */
+  }
+  
+  /* 貼紙容器 */
+  .label-print {
+    width: 40mm !important;
+    height: 30mm !important;
+    padding: 2mm !important;
+    margin-right: 2.5mm !important;  /* 左右間距 2.5mm */
+    margin-bottom: 2.5mm !important; /* 上下間距 2.5mm */
+    font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif !important;
+    font-size: 9pt !important;
+    line-height: 1.3 !important;
+    color: #000 !important;
+    background: white !important;
+    border: 1px solid #000 !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    break-after: always !important;
+  }
+  
+  /* 移除最後一張貼紙的分頁 */
+  .label-print:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+}
+
+/* 一般樣式（螢幕顯示用，隱藏但保留在 DOM 中） */
+.label-print-container {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 第1行：店名 + 訂單編號 */
+.label-line-1 {
+  font-size: 10pt;
+  font-weight: bold;
+  margin-bottom: 1mm;
+}
+
+/* 分隔線 */
+.label-divider {
+  border-bottom: 1px solid #000;
+  margin: 1mm 0;
+}
+
+/* 第2行：用餐方式 + 桌號 + 日期時間 */
+.label-line-2 {
+  font-size: 9pt;
+  margin-bottom: 1mm;
+}
+
+/* 第3行：產品名稱 + 價格 */
+.label-line-3 {
+  font-size: 9pt;
+  font-weight: bold;
+  margin-bottom: 1mm;
+}
+
+/* 第4行：配料 */
+.label-line-4 {
+  font-size: 8pt;
+  margin-bottom: 0.5mm;
+  line-height: 1.2;
+}
+
+/* 第5行：預留空行 */
+.label-line-5 {
+  height: 2mm;
+}
+
+/* 第6行：電話 */
+.label-line-6 {
+  font-size: 8pt;
+  margin-top: auto;
+}
