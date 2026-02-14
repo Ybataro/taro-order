@@ -6,15 +6,6 @@ import Button from '../../components/ui/Button';
 import QuantityStepper from '../../components/ui/QuantityStepper';
 import { useState } from 'react';
 
-// 生成訂單 ID
-function generateOrderId(): string {
-  const now = new Date();
-  const dateStr = now.toISOString().slice(2, 10).replace(/-/g, ''); // YYMMDD
-  const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, ''); // HHMMSS
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `${dateStr}${timeStr}${random}`;
-}
-
 function formatCustomization(item: import('../../types').CartItem): string {
   const parts: string[] = [];
   if (item.customization.temperature) parts.push(`溫度：${item.customization.temperature}`);
@@ -28,36 +19,50 @@ export default function CartPage() {
   const navigate = useNavigate();
   const { items, tableNumber, note, paymentMethod, updateQuantity, removeItem, setNote, setPaymentMethod, clearCart } = useCartStore();
   const addOrder = useOrderStore((s) => s.addOrder);
+  const generateDailyOrderNumber = useOrderStore((s) => s.generateDailyOrderNumber);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const total = items.reduce((sum, i) => sum + getItemUnitPrice(i) * i.quantity, 0);
 
-  const handleSubmit = () => {
-    if (items.length === 0 || !tableNumber) return;
+  const handleSubmit = async () => {
+    if (items.length === 0 || !tableNumber || isSubmitting) return;
 
-    const order = {
-      id: generateOrderId(),
-      table_number: tableNumber,
-      items: items.map((i) => {
-        const customText = formatCustomization(i);
-        return {
-          menuItemId: i.menuItem.id,
-          name: i.menuItem.name,
-          price: getItemUnitPrice(i),
-          quantity: i.quantity,
-          customizationText: customText,
-        };
-      }),
-      status: 'pending' as const,
-      total_price: total,
-      notes: note,
-      payment_method: paymentMethod,
-      created_at: new Date().toISOString(),
-    };
+    try {
+      setIsSubmitting(true);
 
-    addOrder(order);
-    clearCart();
-    navigate(`/thank-you/${order.id}`);
+      // 生成每日流水號訂單編號
+      const orderNumber = await generateDailyOrderNumber();
+
+      const order = {
+        id: orderNumber,
+        table_number: tableNumber,
+        items: items.map((i) => {
+          const customText = formatCustomization(i);
+          return {
+            menuItemId: i.menuItem.id,
+            name: i.menuItem.name,
+            price: getItemUnitPrice(i),
+            quantity: i.quantity,
+            customizationText: customText,
+          };
+        }),
+        status: 'pending' as const,
+        total_price: total,
+        notes: note,
+        payment_method: paymentMethod,
+        created_at: new Date().toISOString(),
+      };
+
+      await addOrder(order);
+      clearCart();
+      navigate(`/thank-you/${order.id}`);
+    } catch (error) {
+      console.error('送出訂單失敗:', error);
+      alert('送出訂單失敗，請重試');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -191,11 +196,11 @@ export default function CartPage() {
               第 {tableNumber} 桌 ・ 共 {items.length} 項 ・ NT$ {total}
             </p>
             <div className="flex gap-3">
-              <Button variant="secondary" fullWidth onClick={() => setShowConfirm(false)}>
+              <Button variant="secondary" fullWidth onClick={() => setShowConfirm(false)} disabled={isSubmitting}>
                 再看看
               </Button>
-              <Button fullWidth onClick={handleSubmit}>
-                確認送出
+              <Button fullWidth onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? '送出中...' : '確認送出'}
               </Button>
             </div>
           </div>

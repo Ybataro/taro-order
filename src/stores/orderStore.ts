@@ -16,6 +16,7 @@ interface OrderState {
   fetchTables: () => Promise<void>;
   subscribeToOrders: () => (() => void);
   resetDaily: () => Promise<void>;
+  generateDailyOrderNumber: () => Promise<string>;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
@@ -190,6 +191,33 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     return () => {
       supabase.removeChannel(channel);
     };
+  },
+
+  // 生成每日流水號訂單編號（格式：1, 2, 3...）
+  generateDailyOrderNumber: async () => {
+    try {
+      // 取得今天的所有訂單
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString();
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id')
+        .gte('created_at', todayStr)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // 計算今天的訂單數量 + 1
+      const nextNumber = (data?.length || 0) + 1;
+
+      return nextNumber.toString();
+    } catch (error) {
+      console.error('Error generating order number:', error);
+      // 如果出錯，使用時間戳作為備用
+      return Date.now().toString();
+    }
   },
 
   // 交班歸零：清空所有訂單並重置桌位
