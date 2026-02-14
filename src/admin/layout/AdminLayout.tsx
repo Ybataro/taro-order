@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { ClipboardList, UtensilsCrossed, Armchair, QrCode, BarChart3 } from 'lucide-react';
 import { useOrderStore } from '../../stores/orderStore';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const navItems = [
   { to: '/admin/orders', icon: ClipboardList, label: '訂單管理' },
@@ -12,9 +12,9 @@ const navItems = [
 ];
 
 export default function AdminLayout() {
-  const pendingCount = useOrderStore((s) =>
-    s.orders.filter((o) => o.status === 'pending').length
-  );
+  const orders = useOrderStore((s) => s.orders);
+  const pendingCount = orders.filter((o) => o.status === 'pending').length;
+  const knownOrderIdsRef = useRef(new Set<string>());
 
   // 全局 Realtime 訂閱 - 只在 AdminLayout 建立一次
   useEffect(() => {
@@ -28,6 +28,57 @@ export default function AdminLayout() {
       unsubscribe();
     };
   }, []); // 只在元件掛載時執行一次
+
+  // 全局新訂單音效提示
+  useEffect(() => {
+    const currentPendingOrders = orders.filter(o => o.status === 'pending');
+    const currentOrderIds = new Set(currentPendingOrders.map(o => o.id));
+    
+    // 找出新增的訂單 ID
+    const newOrderIds = currentPendingOrders
+      .filter(o => !knownOrderIdsRef.current.has(o.id))
+      .map(o => o.id);
+    
+    if (newOrderIds.length > 0) {
+      console.log('🆕 發現新訂單:', newOrderIds);
+      playNotificationSound();
+      
+      // 更新已知訂單列表
+      knownOrderIdsRef.current = currentOrderIds;
+    } else if (knownOrderIdsRef.current.size === 0) {
+      // 初始化：記錄當前所有訂單，避免首次載入時誤判
+      knownOrderIdsRef.current = currentOrderIds;
+    }
+  }, [orders]);
+
+  // 播放新訂單提示音
+  const playNotificationSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // 播放兩次鈴聲
+      [0, 0.3].forEach((delay) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = delay === 0 ? 800 : 1000;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + delay);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + delay + 0.2);
+        
+        oscillator.start(audioContext.currentTime + delay);
+        oscillator.stop(audioContext.currentTime + delay + 0.2);
+      });
+      
+      console.log('🔔 新訂單提示音已播放');
+    } catch (error) {
+      console.error('播放提示音失敗:', error);
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
