@@ -14,8 +14,6 @@ interface OrderState {
   clearTable: (tableNumber: number) => Promise<void>;
   fetchOrders: () => Promise<void>;
   fetchTables: () => Promise<void>;
-  fetchOrderHistory: (startDate?: string, endDate?: string) => Promise<Order[]>;
-  fetchAllOrders: (startDate?: string, endDate?: string) => Promise<Order[]>;
   subscribeToOrders: () => (() => void);
   resetDaily: () => Promise<void>;
   generateDailyOrderNumber: () => Promise<string>;
@@ -242,56 +240,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     };
   },
 
-  // 從歷史表載入訂單（用於報表分析）
-  fetchOrderHistory: async (startDate?: string, endDate?: string) => {
-    try {
-      let query = supabase
-        .from('order_history')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (startDate) {
-        query = query.gte('created_at', startDate);
-      }
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        query = query.lte('created_at', end.toISOString());
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching order history:', error);
-      return [];
-    }
-  },
-
-  // 載入所有訂單（包含當前和歷史）
-  fetchAllOrders: async (startDate?: string, endDate?: string) => {
-    try {
-      // 同時查詢當前訂單和歷史訂單
-      const [currentOrders, historyOrders] = await Promise.all([
-        get().fetchOrders().then(() => get().orders),
-        get().fetchOrderHistory(startDate, endDate)
-      ]);
-
-      // 合併並按時間排序
-      const allOrders = [...currentOrders, ...historyOrders];
-      allOrders.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-
-      return allOrders;
-    } catch (error) {
-      console.error('Error fetching all orders:', error);
-      return [];
-    }
-  },
-
   // 生成每日流水號訂單編號（格式：1, 2, 3...）
   generateDailyOrderNumber: async () => {
     try {
@@ -319,20 +267,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  // 交班歸零：將訂單歸檔到歷史表並重置桌位
+  // 交班歸零：清空所有訂單並重置桌位
   resetDaily: async () => {
     try {
-      console.log('🗃️ 開始歸檔訂單...');
-      
-      // 呼叫 Supabase 函數來歸檔訂單
-      const { error: archiveError } = await supabase.rpc('archive_orders');
+      // 刪除所有訂單
+      const { error: deleteError } = await supabase
+        .from('orders')
+        .delete()
+        .neq('id', ''); // 刪除所有記錄
 
-      if (archiveError) {
-        console.error('❌ 歸檔訂單失敗:', archiveError);
-        throw archiveError;
-      }
-
-      console.log('✅ 訂單已歸檔到歷史表');
+      if (deleteError) throw deleteError;
 
       // 重置所有桌位為可用
       const { error: updateError } = await supabase
@@ -340,18 +284,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         .update({ status: 'available', current_order_id: null })
         .neq('table_number', 0); // 更新所有記錄
 
-      if (updateError) {
-        console.error('❌ 重置桌位失敗:', updateError);
-        throw updateError;
-      }
-
-      console.log('✅ 桌位已重置');
+      if (updateError) throw updateError;
 
       // 重新載入資料
       await get().fetchOrders();
       await get().fetchTables();
 
-      console.log('✅ 交班歸零成功，歷史資料已保存');
+      console.log('✅ 交班歸零成功');
     } catch (error) {
       console.error('❌ 交班歸零失敗:', error);
       throw error;

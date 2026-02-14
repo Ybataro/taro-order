@@ -4,55 +4,15 @@ import { useOrderStore } from '../../stores/orderStore';
 import type { Order } from '../../types';
 
 export default function AnalyticsPage() {
-  const fetchAllOrders = useOrderStore((s) => s.fetchAllOrders);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { orders, fetchOrders } = useOrderStore();
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'custom'>('today');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [loading, setLoading] = useState(false);
 
-  // 載入訂單資料（包含歷史）
+  // 載入訂單資料
   useEffect(() => {
-    const loadOrders = async () => {
-      setLoading(true);
-      try {
-        let start: string | undefined;
-        let end: string | undefined;
-
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        switch (dateRange) {
-          case 'today':
-            start = today.toISOString();
-            break;
-          case 'week':
-            const weekAgo = new Date(today);
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            start = weekAgo.toISOString();
-            break;
-          case 'month':
-            const monthAgo = new Date(today);
-            monthAgo.setMonth(monthAgo.getMonth() - 1);
-            start = monthAgo.toISOString();
-            break;
-          case 'custom':
-            start = startDate;
-            end = endDate;
-            break;
-        }
-
-        const allOrders = await fetchAllOrders(start, end);
-        setOrders(allOrders);
-      } catch (error) {
-        console.error('載入訂單資料失敗:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadOrders();
-  }, [dateRange, startDate, endDate, fetchAllOrders]);
+    fetchOrders();
+  }, [fetchOrders]);
 
   // 篩選訂單（根據日期範圍）
   const getFilteredOrders = (): Order[] => {
