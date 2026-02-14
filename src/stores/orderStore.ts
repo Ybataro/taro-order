@@ -159,6 +159,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   // 訂閱即時更新
   subscribeToOrders: () => {
     console.log('🔔 正在建立 Realtime 訂閱...');
+    console.log('📋 訂閱目標: orders 和 tables 表');
     
     const channel = supabase
       .channel('orders-changes')
