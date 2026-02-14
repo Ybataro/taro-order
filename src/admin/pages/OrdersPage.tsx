@@ -31,69 +31,14 @@ export default function OrdersPage() {
   const [activeFilter, setActiveFilter] = useState<'all' | OrderStatus>('all');
   const [selectedDate, setSelectedDate] = useState(todayString());
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const prevCountRef = useRef(orders.length);
-  const knownOrderIdsRef = useRef(new Set<string>());
 
   const isToday = selectedDate === todayString();
 
-  // 初始載入訂單（Realtime 訂閱已在 AdminLayout 建立）
+  // 初始載入訂單（Realtime 訂閱和音效提醒已在 AdminLayout 建立）
   useEffect(() => {
     fetchOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 只在元件掛載時執行一次
-
-  // 新訂單音效提醒 - 改進版：追蹤訂單 ID 而非數量
-  useEffect(() => {
-    // 初次載入時，記錄所有現有訂單 ID
-    if (knownOrderIdsRef.current.size === 0) {
-      orders.forEach(order => knownOrderIdsRef.current.add(order.id));
-      return;
-    }
-
-    // 檢查是否有新的 pending 訂單
-    const newPendingOrders = orders.filter(
-      order => order.status === 'pending' && !knownOrderIdsRef.current.has(order.id)
-    );
-
-    if (newPendingOrders.length > 0) {
-      console.log('🆕 發現新訂單:', newPendingOrders.map(o => o.id));
-      
-      try {
-        // 建立音效上下文
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        
-        // 播放鈴聲函數
-        const playBeep = (frequency: number, duration: number, delay: number = 0) => {
-          setTimeout(() => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.frequency.value = frequency;
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + duration);
-          }, delay);
-        };
-        
-        // 播放兩聲「叮叮」提示音
-        playBeep(800, 0.15, 0);
-        playBeep(1000, 0.2, 200);
-        
-        console.log('🔔 新訂單提示音已播放');
-      } catch (error) {
-        console.log('⚠️ 音效播放失敗（可能需要用戶互動）:', error);
-      }
-
-      // 將新訂單加入已知列表
-      newPendingOrders.forEach(order => knownOrderIdsRef.current.add(order.id));
-    }
-
-    // 更新已知訂單列表（清理已刪除的訂單）
-    const currentOrderIds = new Set(orders.map(o => o.id));
-    knownOrderIdsRef.current = currentOrderIds;
-  }, [orders]);
 
   // 依日期篩選
   const dateOrders = orders.filter((o) => toDateString(o.created_at) === selectedDate);
