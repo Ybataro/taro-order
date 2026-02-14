@@ -21,8 +21,15 @@ export default function MenuPage() {
   const setTableNumber = useCartStore((s) => s.setTableNumber);
   const tables = useOrderStore((s) => s.tables);
   const fetchTables = useOrderStore((s) => s.fetchTables);
-  const [activeCategoryId, setActiveCategoryId] = useState(categories[0]?.id || '');
+  const [activeCategoryId, setActiveCategoryId] = useState('');
   const [occupiedConfirmed, setOccupiedConfirmed] = useState(false);
+
+  // 當分類載入後，自動選中第一個分類（蔗片冰區）
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategoryId) {
+      setActiveCategoryId(categories[0].id);
+    }
+  }, [categories, activeCategoryId]);
 
   const isTableOccupied = tables.find((t) => t.table_number === tableNumber)?.status === 'occupied';
 
