@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { ClipboardList, UtensilsCrossed, Armchair, QrCode, BarChart3 } from 'lucide-react';
 import { useOrderStore } from '../../stores/orderStore';
+import { useEffect } from 'react';
 
 const navItems = [
   { to: '/admin/orders', icon: ClipboardList, label: '訂單管理' },
@@ -14,6 +15,19 @@ export default function AdminLayout() {
   const pendingCount = useOrderStore((s) =>
     s.orders.filter((o) => o.status === 'pending').length
   );
+
+  // 全局 Realtime 訂閱 - 只在 AdminLayout 建立一次
+  useEffect(() => {
+    console.log('🌐 AdminLayout: 建立全局 Realtime 訂閱');
+    
+    // 啟用 Supabase 即時訂閱
+    const unsubscribe = useOrderStore.getState().subscribeToOrders();
+    
+    return () => {
+      console.log('🌐 AdminLayout: 清理全局 Realtime 訂閱');
+      unsubscribe();
+    };
+  }, []); // 只在元件掛載時執行一次
 
   return (
     <div className="flex min-h-screen">

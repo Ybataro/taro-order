@@ -35,14 +35,9 @@ export default function OrdersPage() {
 
   const isToday = selectedDate === todayString();
 
-  // 初始載入訂單並啟用即時訂閱
+  // 初始載入訂單（Realtime 訂閱已在 AdminLayout 建立）
   useEffect(() => {
     fetchOrders();
-    
-    // 啟用 Supabase 即時訂閱
-    const unsubscribe = useOrderStore.getState().subscribeToOrders();
-    
-    return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 只在元件掛載時執行一次
 
