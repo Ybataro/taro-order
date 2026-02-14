@@ -12,9 +12,14 @@ export default function TablesPage() {
   const fetchTables = useOrderStore((s) => s.fetchTables);
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
 
-  // 初始載入桌位資料
+  // 初始載入桌位資料並啟用即時訂閱
   useEffect(() => {
     fetchTables();
+    
+    // 啟用 Supabase 即時訂閱
+    const unsubscribe = useOrderStore.getState().subscribeToOrders();
+    
+    return unsubscribe;
   }, [fetchTables]);
 
   const emptyCount = tables.filter((t) => t.status === 'available').length;

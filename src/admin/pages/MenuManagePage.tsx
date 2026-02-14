@@ -1,11 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Pencil, Eye, EyeOff, Trash2, X, Upload } from 'lucide-react';
 import { useMenuStore } from '../../stores/menuStore';
 import type { MenuItem } from '../../types';
 import Button from '../../components/ui/Button';
 
 export default function MenuManagePage() {
-  const { categories, menuItems, addMenuItem, updateMenuItem, toggleAvailability, deleteMenuItem } = useMenuStore();
+  const { 
+    categories, 
+    menuItems, 
+    fetchCategories,
+    fetchMenuItems,
+    fetchAddons,
+    addMenuItem, 
+    updateMenuItem, 
+    toggleAvailability, 
+    deleteMenuItem 
+  } = useMenuStore();
   const [filterCategoryId, setFilterCategoryId] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -86,6 +96,18 @@ export default function MenuManagePage() {
   };
 
   const selectedCategory = categories.find((c) => c.id === formData.categoryId);
+
+  // 載入菜單資料並啟用即時訂閱
+  useEffect(() => {
+    fetchCategories();
+    fetchMenuItems();
+    fetchAddons();
+    
+    // 啟用 Supabase 即時訂閱
+    const unsubscribe = useMenuStore.getState().subscribeToMenu();
+    
+    return unsubscribe;
+  }, [fetchCategories, fetchMenuItems, fetchAddons]);
 
   return (
     <div className="p-6">

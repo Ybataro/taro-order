@@ -14,7 +14,7 @@ interface OrderState {
   clearTable: (tableNumber: number) => Promise<void>;
   fetchOrders: () => Promise<void>;
   fetchTables: () => Promise<void>;
-  subscribeToOrders: () => void;
+  subscribeToOrders: () => (() => void);
   resetDaily: () => Promise<void>;
 }
 

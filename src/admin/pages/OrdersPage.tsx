@@ -35,9 +35,14 @@ export default function OrdersPage() {
 
   const isToday = selectedDate === todayString();
 
-  // 初始載入訂單（Supabase 會自動透過即時監聽同步）
+  // 初始載入訂單並啟用即時訂閱
   useEffect(() => {
     fetchOrders();
+    
+    // 啟用 Supabase 即時訂閱
+    const unsubscribe = useOrderStore.getState().subscribeToOrders();
+    
+    return unsubscribe;
   }, [fetchOrders]);
 
   // 新訂單音效提醒

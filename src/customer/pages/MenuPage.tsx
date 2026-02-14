@@ -11,7 +11,13 @@ import Button from '../../components/ui/Button';
 export default function MenuPage() {
   const [searchParams] = useSearchParams();
   const tableNumber = Number(searchParams.get('table')) || 0;
-  const { categories, menuItems } = useMenuStore();
+  const { 
+    categories, 
+    menuItems, 
+    fetchCategories,
+    fetchMenuItems,
+    fetchAddons 
+  } = useMenuStore();
   const setTableNumber = useCartStore((s) => s.setTableNumber);
   const tables = useOrderStore((s) => s.tables);
   const fetchTables = useOrderStore((s) => s.fetchTables);
@@ -20,10 +26,27 @@ export default function MenuPage() {
 
   const isTableOccupied = tables.find((t) => t.table_number === tableNumber)?.status === 'occupied';
 
-  // 載入桌位資料
+  // 載入桌位資料並啟用即時訂閱
   useEffect(() => {
     fetchTables();
+    
+    // 啟用 Supabase 即時訂閱
+    const unsubscribe = useOrderStore.getState().subscribeToOrders();
+    
+    return unsubscribe;
   }, [fetchTables]);
+
+  // 載入菜單資料並啟用即時訂閱
+  useEffect(() => {
+    fetchCategories();
+    fetchMenuItems();
+    fetchAddons();
+    
+    // 啟用菜單即時訂閱
+    const unsubscribe = useMenuStore.getState().subscribeToMenu();
+    
+    return unsubscribe;
+  }, [fetchCategories, fetchMenuItems, fetchAddons]);
 
   useEffect(() => {
     if (tableNumber >= 5 && tableNumber <= 22) {
