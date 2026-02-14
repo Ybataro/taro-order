@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Plus, Pencil, Eye, EyeOff, Trash2, X, Upload } from 'lucide-react';
 import { useMenuStore } from '../../stores/menuStore';
 import type { MenuItem } from '../../types';
@@ -340,3 +340,4 @@ export default function MenuManagePage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Order, Table, OrderStatus } from '../types';
 
@@ -260,3 +260,4 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 }));
+

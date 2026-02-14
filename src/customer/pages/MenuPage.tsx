@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMenuStore } from '../../stores/menuStore';
 import { useCartStore } from '../../stores/cartStore';
@@ -151,3 +151,4 @@ export default function MenuPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { useOrderStore } from '../../stores/orderStore';
+﻿import { useOrderStore } from '../../stores/orderStore';
 import { useState, useEffect } from 'react';
 import type { Order } from '../../types';
 import Button from '../../components/ui/Button';
@@ -140,3 +140,4 @@ export default function TablesPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import type { Category, MenuItem, Addon } from '../types';
 import { supabase } from '../lib/supabase';
 
@@ -275,3 +275,4 @@ export const useMenuStore = create<MenuState>((set, get) => ({
     };
   },
 }));
+
