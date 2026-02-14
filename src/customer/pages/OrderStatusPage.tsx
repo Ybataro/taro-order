@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Plus } from 'lucide-react';
-import { useOrderStore } from '../../stores/orderStore';
+import { supabase } from '../../lib/supabase';
+import type { Order } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Button from '../../components/ui/Button';
 
@@ -19,7 +21,95 @@ function getStepIndex(status: string): number {
 export default function OrderStatusPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const order = useOrderStore((s) => s.getOrderById(orderId || ''));
+  const [order, setOrder] = useState<Order | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 載入單個訂單資料並啟用即時訂閱
+  useEffect(() => {
+    let mounted = true;
+    let channel: any;
+
+    const loadOrder = async () => {
+      if (!orderId) return;
+      
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // 直接從 Supabase 查詢這個訂單
+        const { data, error: fetchError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+
+        if (fetchError) {
+          console.error('查詢訂單失敗:', fetchError);
+          if (mounted) {
+            setError('找不到此訂單');
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        if (mounted) {
+          setOrder(data);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('載入訂單時發生錯誤:', err);
+        if (mounted) {
+          setError('載入訂單失敗');
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // 初始載入
+    loadOrder();
+
+    // 訂閱這個訂單的即時更新
+    channel = supabase
+      .channel(`order-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          console.log('訂單更新:', payload);
+          if (payload.eventType === 'UPDATE' && mounted) {
+            setOrder(payload.new as Order);
+          } else if (payload.eventType === 'DELETE' && mounted) {
+            setError('此訂單已被刪除');
+            setOrder(null);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [orderId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <span className="text-5xl block mb-4">⏳</span>
+          <p className="text-lg text-text-secondary">載入中...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -27,6 +117,13 @@ export default function OrderStatusPage() {
         <div className="text-center">
           <span className="text-5xl block mb-4">🔍</span>
           <p className="text-lg text-text-secondary">找不到此訂單</p>
+          <p className="text-sm text-text-hint mt-2">訂單編號：{orderId}</p>
+          <Button
+            className="mt-6"
+            onClick={() => navigate('/')}
+          >
+            返回首頁
+          </Button>
         </div>
       </div>
     );
