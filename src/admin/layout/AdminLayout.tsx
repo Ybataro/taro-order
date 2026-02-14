@@ -15,6 +15,7 @@ export default function AdminLayout() {
   const orders = useOrderStore((s) => s.orders);
   const pendingCount = orders.filter((o) => o.status === 'pending').length;
   const knownOrderIdsRef = useRef(new Set<string>());
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   // 全局 Realtime 訂閱 - 只在 AdminLayout 建立一次
   useEffect(() => {
@@ -51,10 +52,36 @@ export default function AdminLayout() {
     }
   }, [orders]);
 
+  // 初始化 AudioContext（需要用戶互動）
+  const initAudioContext = () => {
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        console.log('🎵 AudioContext 已初始化');
+      } catch (error) {
+        console.error('AudioContext 初始化失敗:', error);
+      }
+    }
+  };
+
   // 播放新訂單提示音
   const playNotificationSound = () => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      // 確保 AudioContext 已初始化
+      if (!audioContextRef.current) {
+        initAudioContext();
+      }
+      
+      const audioContext = audioContextRef.current;
+      if (!audioContext) {
+        console.warn('⚠️ AudioContext 未初始化');
+        return;
+      }
+
+      // 恢復 AudioContext（如果被暫停）
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
       
       // 播放兩次鈴聲
       [0, 0.3].forEach((delay) => {
@@ -74,14 +101,14 @@ export default function AdminLayout() {
         oscillator.stop(audioContext.currentTime + delay + 0.2);
       });
       
-      console.log('🔔 新訂單提示音已播放');
+      console.log('🔔 新訂單提示音已播放 (AudioContext state:', audioContext.state + ')');
     } catch (error) {
       console.error('播放提示音失敗:', error);
     }
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" onClick={initAudioContext}>
       {/* 側邊導航 */}
       <aside className="w-60 bg-dark-brown flex flex-col flex-shrink-0">
         {/* Logo 區 */}
