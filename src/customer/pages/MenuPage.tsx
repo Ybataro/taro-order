@@ -123,26 +123,34 @@ export default function MenuPage() {
 
       {/* 菜單內容 */}
       <main className="px-4 pt-4">
-        {groupedItems.map(({ subcategory, items }) =>
-          items.length > 0 ? (
-            <section key={subcategory.id} className="mb-6">
-              <h2 className="text-lg font-bold text-text-primary mb-3 flex items-center gap-2 font-serif">
-                <span className="w-1 h-5 bg-primary rounded-full" />
-                {subcategory.name}
-              </h2>
-              <div className="flex flex-col gap-3">
-                {items.map((item) => (
-                  <MenuCard key={item.id} item={item} />
-                ))}
-              </div>
-            </section>
-          ) : null
-        )}
-
-        {availableItems.length === 0 && (
+        {categories.length === 0 ? (
           <div className="text-center py-12 text-text-hint">
-            <p className="text-lg">此分類目前沒有品項</p>
+            <p className="text-lg">載入中...</p>
           </div>
+        ) : (
+          <>
+            {groupedItems.map(({ subcategory, items }) =>
+              items.length > 0 ? (
+                <section key={subcategory.id} className="mb-6">
+                  <h2 className="text-lg font-bold text-text-primary mb-3 flex items-center gap-2 font-serif">
+                    <span className="w-1 h-5 bg-primary rounded-full" />
+                    {subcategory.name}
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {items.map((item) => (
+                      <MenuCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </section>
+              ) : null
+            )}
+
+            {categories.length > 0 && availableItems.length === 0 && activeCategoryId && (
+              <div className="text-center py-12 text-text-hint">
+                <p className="text-lg">此分類目前沒有品項</p>
+              </div>
+            )}
+          </>
         )}
       </main>
 
