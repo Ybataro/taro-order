@@ -13,6 +13,11 @@ const navItems = [
 
 export default function AdminLayout() {
   const orders = useOrderStore((s) => s.orders);
+  
+  // 除錯：監聽 orders 變化
+  useEffect(() => {
+    console.log('🔍 AdminLayout: orders 狀態已更新，數量:', orders.length);
+  }, [orders]);
   const pendingCount = orders.filter((o) => o.status === 'pending').length;
   const knownOrderIdsRef = useRef(new Set<string>());
   const audioContextRef = useRef<AudioContext | null>(null);
