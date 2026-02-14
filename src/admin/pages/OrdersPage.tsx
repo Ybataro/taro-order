@@ -43,7 +43,8 @@ export default function OrdersPage() {
     const unsubscribe = useOrderStore.getState().subscribeToOrders();
     
     return unsubscribe;
-  }, [fetchOrders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在元件掛載時執行一次
 
   // 新訂單音效提醒
   useEffect(() => {
