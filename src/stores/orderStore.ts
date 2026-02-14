@@ -158,6 +158,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   // 訂閱即時更新
   subscribeToOrders: () => {
+    console.log('🔔 正在建立 Realtime 訂閱...');
+    
     const channel = supabase
       .channel('orders-changes')
       .on(
@@ -168,7 +170,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           table: 'orders',
         },
         async (payload) => {
-          console.log('Order change received:', payload);
+          console.log('🎉 訂單變更事件:', payload.eventType, payload);
           // 重新載入訂單
           await get().fetchOrders();
         }
@@ -181,14 +183,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           table: 'tables',
         },
         async (payload) => {
-          console.log('Table change received:', payload);
+          console.log('🪑 桌位變更事件:', payload.eventType, payload);
           // 重新載入桌位
           await get().fetchTables();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Realtime 訂閱狀態:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime 訂閱成功！');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Realtime 訂閱失敗！');
+        }
+      });
 
     return () => {
+      console.log('🔌 取消 Realtime 訂閱');
       supabase.removeChannel(channel);
     };
   },
