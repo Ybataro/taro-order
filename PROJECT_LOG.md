@@ -1,5 +1,98 @@
 # 阿爸的芋圓點餐系統 - 開發日誌
 
+## 📅 2026-02-14 開發記錄（第三天）
+
+### 🎉 重大突破：完全修復 Realtime 訂閱問題
+
+#### 問題診斷過程
+
+**症狀：**
+- Realtime 訂閱狀態顯示 `TIMED_OUT`（超時）
+- WebSocket 連接失敗：`WebSocket is closed before the connection is established`
+- 測試頁面可以成功訂閱，但應用程式訂閱失敗
+
+**根本原因發現：**
+1. **useEffect dependency 問題** - dependency array 包含函數引用，導致每次重新渲染時訂閱被重新建立
+2. **React StrictMode 雙重渲染** - 開發模式下 StrictMode 會雙重執行 useEffect，造成訂閱衝突
+3. **重複訂閱問題** - `src/lib/initSupabase.ts` 在 App 啟動時訂閱，各頁面又在 useEffect 中訂閱，造成多重訂閱
+
+#### 修復方案
+
+**1. 修正 useEffect dependency array**
+- 將所有 Realtime 訂閱的 dependency array 改為空陣列 `[]`
+- 確保訂閱只在組件掛載時建立一次
+- 修改檔案：
+  - `src/customer/pages/MenuPage.tsx`
+  - `src/admin/pages/OrdersPage.tsx`
+  - `src/admin/pages/TablesPage.tsx`
+  - `src/admin/pages/MenuManagePage.tsx`
+
+**2. 移除 React StrictMode**
+- 從 `src/main.tsx` 移除 `<StrictMode>` 包裝
+- 避免開發模式下的雙重渲染和訂閱
+
+**3. 刪除重複訂閱**
+- 刪除 `src/lib/initSupabase.ts` 檔案
+- 移除 `main.tsx` 中的 `initSupabase()` 呼叫
+- 由各頁面的 useEffect 負責管理訂閱生命週期
+
+**4. 改進 Realtime 訂閱日誌**
+- 在 `orderStore.ts` 和 `menuStore.ts` 加入詳細日誌
+- 訂閱狀態變化：SUBSCRIBED, CHANNEL_ERROR, TIMED_OUT, CLOSED
+- 訂單變更事件：INSERT, UPDATE, DELETE
+
+**5. Supabase 資料庫設定修正**
+- 執行 SQL 確保所有資料表的 Replica Identity 設為 FULL
+- 確認所有資料表已加入 `supabase_realtime` publication
+- 確認所有資料表的 RLS 設為 DISABLED
+
+#### 改進新訂單音效邏輯
+
+**舊邏輯問題：**
+- 只比對訂單總數量，容易誤觸發
+- 初次載入時可能誤判
+
+**新邏輯：**
+- 使用 `Set` 追蹤已知訂單的 ID
+- 只有新增的 `pending` 訂單才觸發音效
+- 初次載入後等待 1 秒才開始監聽
+- 加入詳細日誌：`🎉 偵測到新訂單: X 筆`
+
+#### 測試結果
+
+**✅ 本地測試（成功）：**
+- Realtime 訂閱狀態: `SUBSCRIBED`
+- 新訂單即時出現
+- 音效正常播放
+
+**✅ 線上測試（成功）：**
+- 部署到 Netlify 後測試通過
+- Realtime 訂閱狀態: `SUBSCRIBED`
+- 手機掃描 QR Code 新增訂單，後台即時顯示
+- 聽到「叮叮」兩聲提示音
+
+#### 修改的檔案清單
+
+```
+✅ src/main.tsx - 移除 StrictMode 和 initSupabase
+✅ src/stores/orderStore.ts - 修正訂閱邏輯和日誌
+✅ src/stores/menuStore.ts - 加入訂閱狀態日誌
+✅ src/admin/pages/OrdersPage.tsx - 修正 useEffect + 改進音效
+✅ src/admin/pages/TablesPage.tsx - 修正 useEffect
+✅ src/admin/pages/MenuManagePage.tsx - 修正 useEffect
+✅ src/customer/pages/MenuPage.tsx - 修正 useEffect (2處)
+❌ src/lib/initSupabase.ts - 刪除檔案
+```
+
+#### Git 提交記錄
+
+```bash
+fa2ca57 - 修正：移除未使用的 StrictMode import
+464994d - 修復 Realtime 訂閱問題並改進新訂單音效
+```
+
+---
+
 ## 📅 2026-02-14 開發記錄（第二天）
 
 ### 完成的功能
@@ -28,14 +121,6 @@
 5. **✅ 建立專案文件**
    - `PROJECT_LOG.md` - 完整開發記錄
    - `CONTINUE_TOMORROW.md` - 明天繼續指南
-
-### 待解決問題
-
-1. **⚠️ Realtime 訂閱失敗**
-   - Supabase 設定都正確
-   - Publication、RLS、Replica Identity 都已設定
-   - 但訂閱時仍顯示 "❌ Realtime 訂閱失敗！"
-   - **下一步**：檢查 Netlify 環境變數、查看 Realtime logs
 
 ---
 
@@ -269,19 +354,46 @@ b8df31e - 菜單遷移到 Supabase 並啟用即時訂閱功能
 
 ---
 
-## 🎉 今日成果總結
+## 🎉 累計成果總結
 
+### 第三天（2026-02-14）
+✅ **完全修復 Realtime 訂閱問題**（SUBSCRIBED 成功！）  
+✅ 修正 useEffect dependency 導致的 WebSocket 超時問題  
+✅ 移除 React StrictMode 避免雙重訂閱  
+✅ 刪除重複訂閱檔案（initSupabase.ts）  
+✅ 改進新訂單音效邏輯（追蹤訂單 ID）  
+✅ Supabase 資料庫設定優化（Replica Identity + Publication）  
+✅ 本地 + 線上測試全部通過  
+
+### 第二天（2026-02-14）
+✅ 訂單編號改為每日流水號  
+✅ 修正菜單預設分類問題  
+✅ 改善新訂單音效提醒  
+✅ 建立專案文件（PROJECT_LOG.md + CONTINUE_TOMORROW.md）  
+
+### 第一天（2026-02-14）
 ✅ 菜單管理遷移到 Supabase（5 個資料表 + 44 個品項 + 14 個圖片）  
 ✅ 營業統計報表（日期篩選 + 4 個統計卡片 + TOP 10 + 尖峰時段）  
 ✅ 訂單編號改為每日流水號  
 ✅ Bug 修正（菜單預設分類 + 圖片顯示）  
 ✅ 所有功能已部署到 Netlify  
 
-**下次繼續開發：**
-- 訂單列印功能
-- 更多統計圖表
-- 其他優化功能
+---
+
+## 🚀 下次繼續開發
+
+**優先級 3：訂單列印功能**
+- 出單列印格式（熱感應紙）
+- 廚房單 / 外場單分離
+- 批次列印功能
+
+**優先級 4：其他優化**
+- 統計圖表視覺化（長條圖、折線圖、圓餅圖）
+- 訂單搜尋功能
+- 訂單修改/加單功能
+- 營業日報表匯出
+- 會員/常客管理
 
 ---
 
-**最後更新：2026-02-14**
+**最後更新：2026-02-14（第三天）**
