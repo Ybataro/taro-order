@@ -47,31 +47,43 @@ export default function OrdersPage() {
 
   // 新訂單音效提醒
   useEffect(() => {
-    if (orders.length > prevCountRef.current) {
-      try {
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = 800;
-        gain.gain.value = 0.3;
-        osc.start();
-        osc.stop(ctx.currentTime + 0.2);
-        setTimeout(() => {
-          const osc2 = ctx.createOscillator();
-          const gain2 = ctx.createGain();
-          osc2.connect(gain2);
-          gain2.connect(ctx.destination);
-          osc2.frequency.value = 1000;
-          gain2.gain.value = 0.3;
-          osc2.start();
-          osc2.stop(ctx.currentTime + 0.3);
-        }, 250);
-      } catch { /* 靜音處理 */ }
+    // 只有當訂單增加時才播放音效（不包含初次載入）
+    if (prevCountRef.current > 0 && orders.length > prevCountRef.current) {
+      // 檢查是否有新的 pending 訂單
+      const hasPendingOrder = orders.some(o => o.status === 'pending');
+      
+      if (hasPendingOrder) {
+        try {
+          // 建立音效上下文（需要用戶互動過才能播放）
+          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+          
+          // 第一聲鈴聲
+          const playBeep = (frequency: number, duration: number, delay: number = 0) => {
+            setTimeout(() => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.frequency.value = frequency;
+              gain.gain.setValueAtTime(0.3, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+              osc.start(ctx.currentTime);
+              osc.stop(ctx.currentTime + duration);
+            }, delay);
+          };
+          
+          // 播放兩聲提示音
+          playBeep(800, 0.15, 0);
+          playBeep(1000, 0.2, 200);
+          
+          console.log('🔔 新訂單提示音已播放');
+        } catch (error) {
+          console.log('⚠️ 音效播放失敗（可能需要用戶互動）:', error);
+        }
+      }
     }
     prevCountRef.current = orders.length;
-  }, [orders.length]);
+  }, [orders]);
 
   // 依日期篩選
   const dateOrders = orders.filter((o) => toDateString(o.created_at) === selectedDate);
