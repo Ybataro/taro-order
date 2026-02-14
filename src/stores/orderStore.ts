@@ -179,34 +179,34 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           try {
             const currentOrders = get().orders;
             console.log('📋 當前訂單數:', currentOrders.length);
-          
-          if (payload.eventType === 'INSERT') {
-            // 新增訂單：直接加入狀態（使用新陣列確保 React 偵測到變化）
-            const newOrder = payload.new as Order;
-            console.log('➕ 新訂單資料:', newOrder);
-            const newOrders = [newOrder, ...currentOrders];
-            console.log('📦 建立新陣列，長度:', newOrders.length);
-            set({ orders: newOrders });
-            console.log('✅ 新訂單已加入狀態，目前訂單數:', get().orders.length);
             
-            // 強制觸發狀態更新通知
-            const state = get();
-            console.log('🔄 強制通知訂閱者，訂單數:', state.orders.length);
-          } else if (payload.eventType === 'UPDATE') {
-            // 更新訂單：替換對應的訂單
-            const updatedOrder = payload.new as Order;
-            const updatedOrders = currentOrders.map(order =>
-              order.id === updatedOrder.id ? updatedOrder : order
-            );
-            set({ orders: updatedOrders });
-            console.log('🔄 訂單已更新:', updatedOrder.id, '狀態:', updatedOrder.status);
-          } else if (payload.eventType === 'DELETE') {
-            // 刪除訂單：移除對應的訂單
-            const deletedId = payload.old.id;
-            const filteredOrders = currentOrders.filter(order => order.id !== deletedId);
-            set({ orders: filteredOrders });
-            console.log('🗑️ 訂單已刪除:', deletedId);
-          }
+            if (payload.eventType === 'INSERT') {
+              // 新增訂單：直接加入狀態（使用新陣列確保 React 偵測到變化）
+              const newOrder = payload.new as Order;
+              console.log('➕ 新訂單資料:', newOrder);
+              const newOrders = [newOrder, ...currentOrders];
+              console.log('📦 建立新陣列，長度:', newOrders.length);
+              set({ orders: newOrders });
+              console.log('✅ 新訂單已加入狀態，目前訂單數:', get().orders.length);
+              
+              // 強制觸發狀態更新通知
+              const state = get();
+              console.log('🔄 強制通知訂閱者，訂單數:', state.orders.length);
+            } else if (payload.eventType === 'UPDATE') {
+              // 更新訂單：替換對應的訂單
+              const updatedOrder = payload.new as Order;
+              const updatedOrders = currentOrders.map(order =>
+                order.id === updatedOrder.id ? updatedOrder : order
+              );
+              set({ orders: updatedOrders });
+              console.log('🔄 訂單已更新:', updatedOrder.id, '狀態:', updatedOrder.status);
+            } else if (payload.eventType === 'DELETE') {
+              // 刪除訂單：移除對應的訂單
+              const deletedId = payload.old.id;
+              const filteredOrders = currentOrders.filter(order => order.id !== deletedId);
+              set({ orders: filteredOrders });
+              console.log('🗑️ 訂單已刪除:', deletedId);
+            }
           } catch (error) {
             console.error('❌ 處理訂單變更事件時發生錯誤:', error);
           }
