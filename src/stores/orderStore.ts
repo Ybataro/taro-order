@@ -171,8 +171,29 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         },
         async (payload) => {
           console.log('🎉 訂單變更事件:', payload.eventType, payload);
-          // 重新載入訂單
-          await get().fetchOrders();
+          
+          const currentOrders = get().orders;
+          
+          if (payload.eventType === 'INSERT') {
+            // 新增訂單：直接加入狀態
+            const newOrder = payload.new as Order;
+            set({ orders: [newOrder, ...currentOrders] });
+            console.log('➕ 新訂單已加入:', newOrder.id);
+          } else if (payload.eventType === 'UPDATE') {
+            // 更新訂單：替換對應的訂單
+            const updatedOrder = payload.new as Order;
+            const updatedOrders = currentOrders.map(order =>
+              order.id === updatedOrder.id ? updatedOrder : order
+            );
+            set({ orders: updatedOrders });
+            console.log('🔄 訂單已更新:', updatedOrder.id);
+          } else if (payload.eventType === 'DELETE') {
+            // 刪除訂單：移除對應的訂單
+            const deletedId = payload.old.id;
+            const filteredOrders = currentOrders.filter(order => order.id !== deletedId);
+            set({ orders: filteredOrders });
+            console.log('🗑️ 訂單已刪除:', deletedId);
+          }
         }
       )
       .on(
