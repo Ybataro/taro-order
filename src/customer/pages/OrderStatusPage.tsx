@@ -23,7 +23,6 @@ export default function OrderStatusPage() {
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // 載入單個訂單資料並啟用即時訂閱
   useEffect(() => {
@@ -35,7 +34,6 @@ export default function OrderStatusPage() {
       
       try {
         setIsLoading(true);
-        setError(null);
         
         // 直接從 Supabase 查詢這個訂單
         const { data, error: fetchError } = await supabase
@@ -47,7 +45,7 @@ export default function OrderStatusPage() {
         if (fetchError) {
           console.error('查詢訂單失敗:', fetchError);
           if (mounted) {
-            setError('找不到此訂單');
+            setOrder(null);
             setIsLoading(false);
           }
           return;
@@ -60,7 +58,7 @@ export default function OrderStatusPage() {
       } catch (err) {
         console.error('載入訂單時發生錯誤:', err);
         if (mounted) {
-          setError('載入訂單失敗');
+          setOrder(null);
           setIsLoading(false);
         }
       }
@@ -85,7 +83,6 @@ export default function OrderStatusPage() {
           if (payload.eventType === 'UPDATE' && mounted) {
             setOrder(payload.new as Order);
           } else if (payload.eventType === 'DELETE' && mounted) {
-            setError('此訂單已被刪除');
             setOrder(null);
           }
         }
