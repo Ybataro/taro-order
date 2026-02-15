@@ -77,34 +77,50 @@ export default function AdminLayout() {
   }, [orders]);
 
   // 初始化 AudioContext（需要用戶互動）
-  const initAudioContext = () => {
+  const initAudioContext = async () => {
     if (!audioContextRef.current) {
       try {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        console.log('🎵 AudioContext 已初始化');
+        console.log('🎵 AudioContext 已初始化，狀態:', audioContextRef.current.state);
+        
+        // 立即嘗試恢復（需要在用戶手勢中）
+        if (audioContextRef.current.state === 'suspended') {
+          await audioContextRef.current.resume();
+          console.log('🎵 AudioContext 已恢復');
+        }
       } catch (error) {
         console.error('AudioContext 初始化失敗:', error);
+      }
+    } else if (audioContextRef.current.state === 'suspended') {
+      // 如果已存在但被暫停，嘗試恢復
+      try {
+        await audioContextRef.current.resume();
+        console.log('🎵 AudioContext 已恢復');
+      } catch (error) {
+        console.error('AudioContext 恢復失敗:', error);
       }
     }
   };
 
   // 播放提示音（新訂單 / 取消訂單）
-  const playNotificationSound = (type: 'new' | 'cancel' = 'new') => {
+  const playNotificationSound = async (type: 'new' | 'cancel' = 'new') => {
     try {
-      // 確保 AudioContext 已初始化
-      if (!audioContextRef.current) {
-        initAudioContext();
-      }
-      
+      // 確保 AudioContext 已初始化並恢復
       const audioContext = audioContextRef.current;
       if (!audioContext) {
-        console.warn('⚠️ AudioContext 未初始化');
+        console.warn('⚠️ AudioContext 未初始化，請先點擊頁面任何位置');
         return;
       }
 
       // 恢復 AudioContext（如果被暫停）
       if (audioContext.state === 'suspended') {
-        audioContext.resume();
+        try {
+          await audioContext.resume();
+          console.log('🎵 AudioContext 已自動恢復');
+        } catch (error) {
+          console.error('⚠️ AudioContext 恢復失敗，音效無法播放:', error);
+          return;
+        }
       }
       
       if (type === 'new') {
