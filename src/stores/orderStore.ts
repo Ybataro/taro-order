@@ -177,9 +177,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           console.log('🎉 訂單變更事件:', payload.eventType);
           console.log('📊 完整 payload:', payload);
           console.log('═══════════════════════════════════');
+          console.log('🔍 DEBUG: 進入 payload 處理回調');
           
           try {
+            console.log('🔍 DEBUG: 進入 try 區塊');
             const currentOrders = get().orders;
+            console.log('🔍 DEBUG: get().orders 成功，長度:', currentOrders.length);
             console.log('📋 當前訂單數:', currentOrders.length);
             
             if (payload.eventType === 'INSERT') {
