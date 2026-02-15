@@ -299,26 +299,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  // 生成每日流水號訂單編號（格式：1, 2, 3...）
+  // 生成唯一訂單編號（使用時間戳 + 隨機數確保唯一性）
   generateDailyOrderNumber: async () => {
     try {
-      // 取得今天的所有訂單
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString();
-
-      const { data, error } = await supabase
-        .from('orders')
-        .select('id')
-        .gte('created_at', todayStr)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // 計算今天的訂單數量 + 1
-      const nextNumber = (data?.length || 0) + 1;
-
-      return nextNumber.toString();
+      // 使用時間戳 + 隨機數生成唯一 ID
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      const orderId = `${timestamp}${random}`;
+      
+      return orderId;
     } catch (error) {
       console.error('Error generating order number:', error);
       // 如果出錯，使用時間戳作為備用
