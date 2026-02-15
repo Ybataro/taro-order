@@ -10,11 +10,13 @@ export default function TablesPage() {
   const orders = useOrderStore((s) => s.orders);
   const clearTable = useOrderStore((s) => s.clearTable);
   const fetchTables = useOrderStore((s) => s.fetchTables);
+  const fetchOrders = useOrderStore((s) => s.fetchOrders);
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
 
-  // 初始載入桌位資料（Realtime 訂閱已在 AdminLayout 建立）
+  // 初始載入桌位和訂單資料（Realtime 訂閱已在 AdminLayout 建立）
   useEffect(() => {
     fetchTables();
+    fetchOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 只在元件掛載時執行一次
 
