@@ -24,7 +24,7 @@ export default function AdminLayout() {
   const knownOrderIdsRef = useRef(new Set<string>());
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // 全局 Realtime 訂閱
+  // 全局 Realtime 訂閱 + 用戶互動監聽
   useEffect(() => {
     console.log('🌐 AdminLayout: 建立全局 Realtime 訂閱');
     
@@ -34,9 +34,23 @@ export default function AdminLayout() {
     // 啟用 Supabase 即時訂閱
     const unsubscribe = useOrderStore.getState().subscribeToOrders();
     
+    // 監聽用戶第一次點擊/觸摸，初始化 AudioContext
+    const handleFirstInteraction = () => {
+      console.log('👆 偵測到用戶互動，嘗試初始化 AudioContext');
+      initAudioContext();
+      // 移除監聽器（只需要初始化一次）
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+    
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('touchstart', handleFirstInteraction);
+    
     return () => {
       console.log('🌐 AdminLayout: 清理全局 Realtime 訂閱');
       unsubscribe();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 只在元件掛載時執行一次
@@ -167,7 +181,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-screen" onClick={initAudioContext}>
+    <div className="flex min-h-screen">
       {/* 側邊導航 */}
       <aside className="w-60 bg-dark-brown flex flex-col flex-shrink-0">
         {/* Logo 區 */}
