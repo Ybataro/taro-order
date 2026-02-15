@@ -227,12 +227,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           get().fetchTables();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('📡 Realtime 訂閱狀態:', status);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Realtime 訂閱成功！');
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Realtime 訂閱失敗！');
+          console.error('❌ Realtime 訂閱失敗！錯誤:', err);
+        } else if (status === 'TIMED_OUT') {
+          console.error('⏱️ Realtime 訂閱超時');
+        } else if (status === 'CLOSED') {
+          console.warn('🔌 Realtime 連接已關閉');
         }
       });
 

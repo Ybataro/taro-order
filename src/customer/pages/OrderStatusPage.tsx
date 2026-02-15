@@ -87,7 +87,13 @@ export default function OrderStatusPage() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ 訂單狀態訂閱成功');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ 訂單狀態訂閱失敗:', err);
+        }
+      });
 
     return () => {
       mounted = false;
