@@ -45,35 +45,35 @@ export default function AdminLayout() {
   useEffect(() => {
     const currentPendingOrders = orders.filter(o => o.status === 'pending');
     const currentCancelledOrders = orders.filter(o => o.status === 'cancelled');
-    const currentOrderIds = new Set(currentPendingOrders.map(o => o.id));
+    const currentAllOrderIds = new Set(orders.map(o => o.id));
+    const previousOrderIds = knownOrderIdsRef.current;
     
     // 找出新增的待處理訂單
     const newOrderIds = currentPendingOrders
-      .filter(o => !knownOrderIdsRef.current.has(o.id))
+      .filter(o => !previousOrderIds.has(o.id))
       .map(o => o.id);
     
-    // 找出新取消的訂單（狀態變為 cancelled）
+    // 找出新取消的訂單（之前存在，現在狀態是 cancelled，且之前不是 cancelled）
     const newCancelledIds = currentCancelledOrders
-      .filter(o => {
-        const wasKnown = knownOrderIdsRef.current.has(o.id);
-        const wasPending = orders.find(order => order.id === o.id && order.status === 'pending');
-        return wasKnown && !wasPending;
-      })
+      .filter(o => previousOrderIds.has(o.id))
       .map(o => o.id);
     
     if (newOrderIds.length > 0) {
       console.log('🆕 發現新訂單:', newOrderIds);
       playNotificationSound('new');
-      
-      // 更新已知訂單列表
-      knownOrderIdsRef.current = currentOrderIds;
-    } else if (newCancelledIds.length > 0) {
+    }
+    
+    if (newCancelledIds.length > 0) {
       console.log('❌ 訂單已取消:', newCancelledIds);
       playNotificationSound('cancel');
-    } else if (knownOrderIdsRef.current.size === 0) {
-      // 初始化：記錄當前所有訂單，避免首次載入時誤判
-      knownOrderIdsRef.current = currentOrderIds;
     }
+    
+    // 更新已知訂單列表（包含所有狀態的訂單）
+    if (previousOrderIds.size === 0) {
+      // 初始化：記錄當前所有訂單，避免首次載入時誤判
+      console.log('📋 初始化訂單追蹤，當前訂單數:', orders.length);
+    }
+    knownOrderIdsRef.current = currentAllOrderIds;
   }, [orders]);
 
   // 初始化 AudioContext（需要用戶互動）
