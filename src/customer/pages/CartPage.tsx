@@ -30,9 +30,12 @@ export default function CartPage() {
 
     try {
       setIsSubmitting(true);
+      console.log('🛒 開始送出訂單，桌號:', tableNumber, '品項數:', items.length);
 
       // 生成每日流水號訂單編號
+      console.log('🔢 正在生成訂單編號...');
       const orderNumber = await generateDailyOrderNumber();
+      console.log('✅ 訂單編號已生成:', orderNumber);
 
       const order = {
         id: orderNumber,
@@ -54,11 +57,14 @@ export default function CartPage() {
         created_at: new Date().toISOString(),
       };
 
+      console.log('📦 訂單資料:', order);
+      console.log('💾 正在儲存訂單到 Supabase...');
       await addOrder(order);
+      console.log('✅ 訂單已儲存');
       clearCart();
       navigate(`/thank-you/${order.id}`);
     } catch (error) {
-      console.error('送出訂單失敗:', error);
+      console.error('❌ 送出訂單失敗:', error);
       alert('送出訂單失敗，請重試');
     } finally {
       setIsSubmitting(false);
