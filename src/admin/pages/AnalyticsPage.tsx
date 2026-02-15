@@ -25,6 +25,10 @@ export default function AnalyticsPage() {
         switch (dateRange) {
           case 'today':
             start = today.toISOString();
+            const endOfToday = new Date(today);
+            endOfToday.setDate(endOfToday.getDate() + 1);
+            endOfToday.setMilliseconds(-1);
+            end = endOfToday.toISOString();
             break;
           case 'week':
             const weekAgo = new Date(today);
