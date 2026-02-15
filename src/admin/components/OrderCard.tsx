@@ -1,10 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { Order } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Button from '../../components/ui/Button';
 import { useOrderStore } from '../../stores/orderStore';
-import LabelPrint from '../../components/LabelPrint';
 
 interface OrderCardProps {
   order: Order;
@@ -23,7 +22,6 @@ const borderColors = {
 export default function OrderCard({ order, compact = false }: OrderCardProps) {
   const updateOrderStatus = useOrderStore((s) => s.updateOrderStatus);
   const [expanded, setExpanded] = useState(false);
-  const printRef = useRef<{ print: () => void }>(null);
 
   const createdDate = new Date(order.created_at);
   const createdTime = createdDate.toLocaleTimeString('zh-TW', {
@@ -39,9 +37,6 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
     if (order.status === 'pending') {
       updateOrderStatus(order.id, 'confirmed');
     } else if (order.status === 'confirmed') {
-      // 「開始準備」時觸發列印貼紙
-      console.log('🖨️ 準備列印出餐貼紙...');
-      printRef.current?.print();
       updateOrderStatus(order.id, 'preparing');
     } else if (order.status === 'preparing') {
       updateOrderStatus(order.id, 'ready');
@@ -128,11 +123,7 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
 
   // 完整模式：進行中的訂單（pending / accepted / cooking）
   return (
-    <>
-      {/* 隱藏的列印組件 */}
-      <LabelPrint ref={printRef} order={order} />
-      
-      <div className={`bg-card rounded-[12px] shadow-[var(--shadow-card)] border-l-4 ${borderColors[order.status]} overflow-hidden`}>
+    <div className={`bg-card rounded-[12px] shadow-[var(--shadow-card)] border-l-4 ${borderColors[order.status]} overflow-hidden`}>
       {/* 標題列 */}
       <div className="p-4 pb-3">
         <div className="flex items-center justify-between mb-2">
@@ -194,6 +185,5 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
         </div>
       </div>
     </div>
-    </>
   );
 }

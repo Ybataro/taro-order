@@ -24,11 +24,11 @@ export default function AdminLayout() {
   const knownOrderIdsRef = useRef(new Set<string>());
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // 全局 Realtime 訂閱和菜單資料載入
+  // 全局 Realtime 訂閱
   useEffect(() => {
     console.log('🌐 AdminLayout: 建立全局 Realtime 訂閱');
     
-    // 載入菜單資料（供貼紙列印使用）
+    // 載入菜單資料
     fetchMenuItems();
     
     // 啟用 Supabase 即時訂閱
