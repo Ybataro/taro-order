@@ -24,72 +24,6 @@ export default function AdminLayout() {
   const knownOrderIdsRef = useRef(new Set<string>());
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // 全局 Realtime 訂閱 + 用戶互動監聽
-  useEffect(() => {
-    console.log('🌐 AdminLayout: 建立全局 Realtime 訂閱');
-    
-    // 載入菜單資料
-    fetchMenuItems();
-    
-    // 啟用 Supabase 即時訂閱
-    const unsubscribe = useOrderStore.getState().subscribeToOrders();
-    
-    // 監聽用戶第一次點擊/觸摸，初始化 AudioContext
-    const handleFirstInteraction = () => {
-      console.log('👆 偵測到用戶互動，嘗試初始化 AudioContext');
-      initAudioContext();
-      // 移除監聽器（只需要初始化一次）
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
-    };
-    
-    document.addEventListener('click', handleFirstInteraction);
-    document.addEventListener('touchstart', handleFirstInteraction);
-    
-    return () => {
-      console.log('🌐 AdminLayout: 清理全局 Realtime 訂閱');
-      unsubscribe();
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 只在元件掛載時執行一次
-
-  // 全局新訂單音效提示 + 取消訂單音效
-  useEffect(() => {
-    const currentPendingOrders = orders.filter(o => o.status === 'pending');
-    const currentCancelledOrders = orders.filter(o => o.status === 'cancelled');
-    const currentAllOrderIds = new Set(orders.map(o => o.id));
-    const previousOrderIds = knownOrderIdsRef.current;
-    
-    // 找出新增的待處理訂單
-    const newOrderIds = currentPendingOrders
-      .filter(o => !previousOrderIds.has(o.id))
-      .map(o => o.id);
-    
-    // 找出新取消的訂單（之前存在，現在狀態是 cancelled，且之前不是 cancelled）
-    const newCancelledIds = currentCancelledOrders
-      .filter(o => previousOrderIds.has(o.id))
-      .map(o => o.id);
-    
-    if (newOrderIds.length > 0) {
-      console.log('🆕 發現新訂單:', newOrderIds);
-      playNotificationSound('new');
-    }
-    
-    if (newCancelledIds.length > 0) {
-      console.log('❌ 訂單已取消:', newCancelledIds);
-      playNotificationSound('cancel');
-    }
-    
-    // 更新已知訂單列表（包含所有狀態的訂單）
-    if (previousOrderIds.size === 0) {
-      // 初始化：記錄當前所有訂單，避免首次載入時誤判
-      console.log('📋 初始化訂單追蹤，當前訂單數:', orders.length);
-    }
-    knownOrderIdsRef.current = currentAllOrderIds;
-  }, [orders]);
-
   // 初始化 AudioContext（需要用戶互動）
   const initAudioContext = async () => {
     if (!audioContextRef.current) {
@@ -179,6 +113,72 @@ export default function AdminLayout() {
       console.error('播放提示音失敗:', error);
     }
   };
+
+  // 全局 Realtime 訂閱 + 用戶互動監聽
+  useEffect(() => {
+    console.log('🌐 AdminLayout: 建立全局 Realtime 訂閱');
+    
+    // 載入菜單資料
+    fetchMenuItems();
+    
+    // 啟用 Supabase 即時訂閱
+    const unsubscribe = useOrderStore.getState().subscribeToOrders();
+    
+    // 監聽用戶第一次點擊/觸摸，初始化 AudioContext
+    const handleFirstInteraction = () => {
+      console.log('👆 偵測到用戶互動，嘗試初始化 AudioContext');
+      initAudioContext();
+      // 移除監聽器（只需要初始化一次）
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+    
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('touchstart', handleFirstInteraction);
+    
+    return () => {
+      console.log('🌐 AdminLayout: 清理全局 Realtime 訂閱');
+      unsubscribe();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在元件掛載時執行一次
+
+  // 全局新訂單音效提示 + 取消訂單音效
+  useEffect(() => {
+    const currentPendingOrders = orders.filter(o => o.status === 'pending');
+    const currentCancelledOrders = orders.filter(o => o.status === 'cancelled');
+    const currentAllOrderIds = new Set(orders.map(o => o.id));
+    const previousOrderIds = knownOrderIdsRef.current;
+    
+    // 找出新增的待處理訂單
+    const newOrderIds = currentPendingOrders
+      .filter(o => !previousOrderIds.has(o.id))
+      .map(o => o.id);
+    
+    // 找出新取消的訂單（之前存在，現在狀態是 cancelled，且之前不是 cancelled）
+    const newCancelledIds = currentCancelledOrders
+      .filter(o => previousOrderIds.has(o.id))
+      .map(o => o.id);
+    
+    if (newOrderIds.length > 0) {
+      console.log('🆕 發現新訂單:', newOrderIds);
+      playNotificationSound('new');
+    }
+    
+    if (newCancelledIds.length > 0) {
+      console.log('❌ 訂單已取消:', newCancelledIds);
+      playNotificationSound('cancel');
+    }
+    
+    // 更新已知訂單列表（包含所有狀態的訂單）
+    if (previousOrderIds.size === 0) {
+      // 初始化：記錄當前所有訂單，避免首次載入時誤判
+      console.log('📋 初始化訂單追蹤，當前訂單數:', orders.length);
+    }
+    knownOrderIdsRef.current = currentAllOrderIds;
+  }, [orders]);
 
   return (
     <div className="flex min-h-screen">
