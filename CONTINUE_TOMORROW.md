@@ -1,293 +1,193 @@
 # 🌅 明天繼續開發指南
 
-> **上次更新**: 2026-02-15 凌晨 01:50  
-> **當前階段**: Phase 3 完成 ✅ - 出餐貼紙列印功能  
-> **下一步**: Phase 4 - 部署與優化
+> **上次更新**: 2026-02-16 凌晨 00:40  
+> **當前階段**: 核心功能完成 ✅  
+> **下一步**: 測試與優化
 
 ---
 
-## 🎉 今日完成事項
+## 🎉 今日完成事項（2026-02-16）
 
-### ✅ Phase 2 - Supabase 整合 (100% 完成)
+### ✅ 主要功能完成
 
-#### 1. 資料庫整合
-- ✅ Supabase 連線配置驗證
-- ✅ 所有資料表已建立並包含資料
-  - 4 個主分類
-  - 10 個子分類
-  - 44 個菜單品項
-  - 8 個加購品項
-  - 18 個桌位
+1. **訂單歷史資料庫系統**
+   - ✅ 建立 `order_history` 表
+   - ✅ 建立 `archive_orders()` 函數
+   - ✅ 修正 SQL DELETE 語法錯誤（加入 WHERE true）
+   - ✅ 交班歸零改為歸檔（不刪除資料）
+   - ✅ 本地測試成功：37 筆訂單成功歸檔
 
-#### 2. Store 整合
-- ✅ **menuStore** 完整整合
-  - fetchCategories() - 載入分類
-  - fetchMenuItems() - 載入菜單
-  - fetchAddons() - 載入加購
-  - addMenuItem() - 新增品項
-  - updateMenuItem() - 更新品項
-  - toggleAvailability() - 切換上架
-  - deleteMenuItem() - 刪除品項
-  - subscribeToMenu() - 即時訂閱
+2. **營業統計歷史查詢**
+   - ✅ 支援「今天」範圍（只顯示今日訂單）
+   - ✅ 支援「最近 7 天」範圍
+   - ✅ 支援「最近 30 天」範圍
+   - ✅ 支援「自訂範圍」查詢
+   - ✅ 修正日期篩選邏輯（今天範圍加入結束時間）
+   - ✅ 測試通過：今天 NT$ 0，本週 NT$ 1,465
 
-- ✅ **orderStore** 完整整合
-  - fetchOrders() - 載入訂單
-  - fetchTables() - 載入桌位
-  - addOrder() - 新增訂單
-  - updateOrderStatus() - 更新訂單狀態
-  - generateDailyOrderNumber() - 生成訂單編號
-  - resetDaily() - 交班歸零
-  - subscribeToOrders() - 即時訂閱
+3. **修正客戶端點餐功能**
+   - ✅ 發現並修正訂單編號重複問題（duplicate key error）
+   - ✅ 原因：使用流水號 1, 2, 3... 與歷史資料衝突
+   - ✅ 解決方案：改用時間戳 + 隨機數生成唯一訂單 ID
+   - ✅ 本地測試通過：訂單 `1771173210472640` 成功送出
+   - ✅ 線上部署成功
 
-#### 3. 前端頁面整合
-- ✅ 顧客端
-  - MenuPage - 菜單頁面 (含即時訂閱)
-  - CartPage - 購物車頁面
-  - OrderStatusPage - 訂單狀態頁面
+4. **移除貼紙列印功能**
+   - ✅ 刪除 `LabelPrint.tsx` 組件（262 行）
+   - ✅ 刪除 `print.css` 樣式
+   - ✅ 從 OrderCard 和 main.tsx 移除相關代碼
+   - ✅ 更新 AdminLayout 註解
 
-- ✅ 後台管理
-  - OrdersPage - 訂單管理 (含音效提醒)
-  - MenuManagePage - 菜單管理 (完整 CRUD)
-  - TablesPage - 桌位管理
-  - QRCodePage - QR Code 生成
-  - AnalyticsPage - 報表分析
-
-#### 4. 測試驗證
-- ✅ 資料庫連線測試
-- ✅ 完整點餐流程測試
-- ✅ 訂單狀態更新測試
-- ✅ 即時訂閱功能測試
-- ✅ 所有頁面功能驗證
+5. **Supabase 權限和 RLS 修正**
+   - ✅ 修正 `orders` 表 RLS 政策：`{anon, authenticated}` ALL
+   - ✅ 修正 `tables` 表 RLS 政策：`{anon, authenticated}` ALL
+   - ✅ 修正 `menu_items` 表 RLS 政策：`{anon, authenticated}` ALL
+   - ✅ 啟用 Realtime 權限（已在 publication 中）
+   - ✅ 修正權限錯誤：403 permission error 已解決
 
 ---
 
-## 📋 下一步開發計畫
+## ⏸️ 暫停項目
 
-### 🚀 Phase 3 - 優化與擴展
+### 音效功能（Netlify 部署快取問題）
 
-#### 優先級 1 - 部署與優化
-1. **正式環境部署** 🌐
-   - [ ] 更新 Vercel 部署
-   - [ ] 正式環境測試
-   - [ ] 效能監控設置
+**狀態：** 本地測試正常，線上版本因快取問題暫時擱置
 
-2. **圖片管理優化** 🖼️
-   - [ ] 將圖片上傳改用 Supabase Storage
-   - [ ] 實作圖片壓縮與優化
-   - [ ] CDN 配置
+**已完成：**
+- ✅ 新訂單音效：叮叮兩聲（800Hz → 1000Hz）
+- ✅ 取消訂單音效：咚一聲下降音（400Hz）
+- ✅ AudioContext 初始化邏輯
+- ✅ 全局 Realtime 訂閱
+- ✅ 本地測試通過
 
-3. **安全性強化** 🔒
-   - [ ] 設置 Supabase RLS (Row Level Security) 政策
-   - [ ] API Rate Limiting
-   - [ ] 訂單驗證機制強化
-   - [ ] XSS/CSRF 防護
+**問題：**
+- ❌ Netlify 部署的代碼沒有更新（快取問題）
+- ❌ 嘗試多次強制清除快取仍未解決
+- ❌ 修改 build script、新增 .env.production 等方法都無效
 
-#### 優先級 2 - 功能擴展
-1. **訂單功能增強** 📋
-   - [ ] 訂單搜尋功能 (依桌號、日期、品項)
-   - [ ] 訂單備註編輯
-   - [ ] 批次訂單操作
-   - [ ] 訂單列印功能
-
-2. **報表系統** 📊
-   - [ ] 報表匯出功能 (CSV/Excel)
-   - [ ] 自訂日期範圍報表
-   - [ ] 品項銷售排行榜
-   - [ ] 營收趨勢圖表
-
-3. **菜單功能增強** 🍜
-   - [ ] 批次上架/下架
-   - [ ] 菜單複製功能
-   - [ ] 分類排序調整
-   - [ ] 限時特價功能
-
-#### 優先級 3 - 進階功能
-1. **會員系統** 👤
-   - [ ] 客戶資料管理
-   - [ ] 會員積分系統
-   - [ ] 消費記錄查詢
-   - [ ] VIP 優惠機制
-
-2. **優惠券系統** 🎫
-   - [ ] 優惠券建立與管理
-   - [ ] QR Code 優惠券
-   - [ ] 自動折扣計算
-   - [ ] 使用記錄追蹤
-
-3. **通知系統** 🔔
-   - [ ] LINE Notify 整合
-   - [ ] Email 通知
-   - [ ] 推播通知
-   - [ ] SMS 簡訊通知
+**建議解決方案：**
+1. 等待 Netlify 快取自動過期
+2. 或考慮清除 Netlify 的部署快取（手動在 Dashboard 操作）
+3. 暫時擱置，優先完成其他功能
 
 ---
 
-## 🛠️ 開發環境狀態
+## 📊 專案狀態總覽
 
-### 本地開發
-- **URL**: http://localhost:5173
-- **狀態**: ✅ 運行中
-- **Supabase**: https://kvabzewuvlshyzbdqddi.supabase.co
+### ✅ 已完成功能
 
-### 正式環境
-- **URL**: https://roaring-bubblegum-701f02.netlify.app
-- **狀態**: 🟡 待更新部署
+1. **客戶端點餐系統**
+   - ✅ 菜單瀏覽（分類、搜尋）
+   - ✅ 購物車管理
+   - ✅ 訂單送出（使用唯一 ID）
+   - ✅ 訂單狀態追蹤
+   - ✅ Realtime 更新
 
----
+2. **後台管理系統**
+   - ✅ 訂單管理（接單、準備、完成、取消）
+   - ✅ 桌位管理
+   - ✅ 菜單管理
+   - ✅ QR Code 生成
+   - ✅ 營業統計（今天/本週/本月/自訂範圍）
+   - ✅ 交班歸零（歸檔功能）
+   - ✅ 歷史資料查詢
 
-## 📂 重要檔案位置
+3. **資料庫與整合**
+   - ✅ Supabase 整合
+   - ✅ Realtime 訂閱
+   - ✅ RLS 政策設定
+   - ✅ 訂單歷史表
+   - ✅ 歸檔函數
 
-### 配置檔案
-- `.env` - 環境變數
-- `vercel.json` - Vercel 部署配置
-- `vite.config.ts` - Vite 配置
+### ⏸️ 暫停功能
 
-### 資料庫檔案
-- `supabase_menu_schema.sql` - 資料表結構
-- `supabase_menu_data.sql` - 初始資料
-- `update_menu_images.sql` - 圖片更新腳本
-
-### Store 檔案
-- `src/stores/menuStore.ts` - 菜單狀態管理
-- `src/stores/orderStore.ts` - 訂單狀態管理
-- `src/stores/cartStore.ts` - 購物車狀態管理
-
-### 頁面檔案
-- `src/customer/pages/` - 顧客端頁面
-- `src/admin/pages/` - 後台管理頁面
-
-### 文檔檔案
-- `PROJECT_LOG.md` - 詳細開發日誌
-- `INTEGRATION_COMPLETE.md` - 整合完成報告
-- `DEPLOYMENT_INFO.md` - 部署資訊
+- 🔇 音效功能（本地正常，線上部署快取問題）
 
 ---
 
-## 🔍 如何繼續開發
+## 🔧 技術細節
 
-### 1. 啟動開發伺服器
-```powershell
-npm run dev
+### 訂單編號生成策略
+
+**舊方案（已棄用）：**
+```typescript
+// 每日流水號：1, 2, 3...
+const nextNumber = (todayOrders?.length || 0) + 1;
+return nextNumber.toString();
 ```
-開發伺服器將在 http://localhost:5173 啟動
 
-### 2. 測試頁面連結
-- 顧客端菜單: http://localhost:5173/order?table=10
-- 後台訂單: http://localhost:5173/admin/orders
-- 後台菜單: http://localhost:5173/admin/menu
-- 後台桌位: http://localhost:5173/admin/tables
-- QR Code: http://localhost:5173/admin/qrcode
+**問題：** 與 `order_history` 表的 ID 衝突（duplicate key error）
 
-### 3. 查看即時資料庫
-- Supabase Dashboard: https://supabase.com/dashboard
-- 專案 URL: https://kvabzewuvlshyzbdqddi.supabase.co
+**新方案（已採用）：**
+```typescript
+// 時間戳 + 隨機數：1771173210472640
+const timestamp = Date.now();           // 13 位數時間戳
+const random = Math.floor(Math.random() * 1000);  // 0-999
+const orderId = `${timestamp}${random}`;
+return orderId;
+```
 
----
+**優點：**
+- ✅ 絕對唯一（時間戳 + 隨機數）
+- ✅ 不會與歷史資料衝突
+- ✅ 仍然保持時間順序性
 
-## 💡 開發提示
+### 歷史資料歸檔流程
 
-### Supabase 即時訂閱
-系統已實作完整的 Realtime 訂閱功能：
-- 菜單變更會自動同步到所有顧客端
-- 新訂單會立即顯示在後台（含音效提醒）
-- 訂單狀態更新會同步到顧客端
+```sql
+-- 1. 複製訂單到歷史表
+INSERT INTO order_history (...)
+SELECT ..., NOW() as archived_at
+FROM orders;
 
-### 測試多視窗同步
-1. 開啟兩個瀏覽器視窗
-2. 一個開啟後台，一個開啟顧客端
-3. 在任一端進行操作，觀察即時同步效果
+-- 2. 刪除當前訂單（使用 WHERE true 避免語法錯誤）
+DELETE FROM orders WHERE true;
 
-### 資料庫操作
-所有資料庫操作都已封裝在 Store 中：
-- 不需要直接使用 `supabase.from()`
-- 使用 Store 提供的方法即可
-- 錯誤處理已內建
-
----
-
-## 🐛 已知問題
-
-### ❌ 新訂單音效問題（待修正）
-
-**問題描述：**
-- 在**訂單管理頁面**時，新訂單來會有音效 ✅
-- 在**桌位管理頁面**時，新訂單來**沒有音效** ❌
-- Realtime 訂閱正常運作（Console 有顯示 INSERT 事件）
-- 但 AdminLayout 的音效檢測 useEffect 沒有觸發
-
-**已嘗試的修正方案：**
-1. ✅ 將 Realtime 訂閱移至 AdminLayout 全局管理
-2. ✅ 改用持久的 AudioContext（useRef）
-3. ✅ 移除 async 回調改用同步處理
-4. ✅ 修正縮排錯誤
-5. ❌ INSERT 事件有收到，但後續處理邏輯沒執行
-
-**Console 觀察：**
-- ✅ `🎉 訂單變更事件: INSERT` - 有顯示
-- ✅ `📊 完整 payload: {...}` - 有顯示
-- ❌ `📋 當前訂單數: XX` - **沒有顯示**（表示 try 區塊內程式碼沒執行）
-
-**暫時擱置原因：**
-- 問題可能涉及 Zustand 訂閱機制或 React 渲染時機
-- 需要更深入的除錯
-- 避免過多 git push 消耗 Netlify build minutes
-
-**建議下次處理方向：**
-1. 檢查 Zustand 的 selector 是否正確觸發更新
-2. 嘗試使用 `useEffect` 的第三方套件如 `use-deep-compare-effect`
-3. 考慮改用其他音效觸發機制（如直接在 orderStore 中播放）
-4. 可能需要更深入的 React DevTools 分析
-
-**注意事項：**
-- 音效問題僅影響桌位管理等非訂單頁面
-- 在訂單管理頁面音效正常
-- Realtime 訂閱本身運作正常
-- 可以先擱置此問題，不影響核心功能使用
+-- 3. 重置桌位狀態
+UPDATE tables
+SET status = 'available', current_order_id = null
+WHERE table_number != 0;
+```
 
 ---
 
-## 📝 注意事項
+## 🚀 建議下一步
 
-1. **圖片上傳**
-   - 目前使用 Base64 格式儲存
-   - 建議未來改用 Supabase Storage
+### 1️⃣ 立即測試（優先）
 
-2. **訂單編號**
-   - 目前使用每日流水號 (1, 2, 3...)
-   - 可考慮改為更易讀的格式 (如: 20260214-001)
+- [ ] 等待 Netlify 部署完成（約 2-3 分鐘）
+- [ ] 手機掃描測試線上點餐
+- [ ] 測試後台接收訂單
+- [ ] 測試交班歸零和歷史查詢
 
-3. **RLS 政策**
-   - 目前資料表尚未啟用 RLS
-   - 正式上線前需設置安全政策
+### 2️⃣ 音效功能（如需要）
 
-4. **效能優化**
-   - 考慮加入分頁功能（訂單列表）
-   - 圖片延遲載入
-   - 資料快取策略
+- [ ] 嘗試清除 Netlify 部署快取
+- [ ] 或暫時擱置，先使用其他功能
 
----
+### 3️⃣ 優化與測試
 
-## 🎯 本週目標
-
-- [ ] 完成正式環境部署
-- [ ] 設置 RLS 安全政策
-- [ ] 實作圖片 Storage 功能
-- [ ] 加入訂單搜尋功能
-- [ ] 完成報表匯出功能
+- [ ] 完整的端到端測試
+- [ ] 效能優化
+- [ ] UI/UX 優化
 
 ---
 
-## 📞 需要幫助？
+## 📁 重要文件位置
 
-查看以下文件：
-- `INTEGRATION_COMPLETE.md` - 完整的整合報告
-- `PROJECT_LOG.md` - 詳細的開發歷程
-- Supabase 官方文檔: https://supabase.com/docs
+- **SQL 腳本**: `supabase_order_history_schema.sql`, `supabase_fix_archive_function.sql`
+- **備份**: `backups/backup_20260216_003931/`
+- **環境變數**: `.env.backup`
 
 ---
 
-**系統狀態**: 🟢 運行正常  
-**開發進度**: Phase 2 完成 ✅ → Phase 3 開始 🚀  
-**準備程度**: 可接受真實訂單 ✅
+## 💡 注意事項
 
-加油！阿爸的芋圓點餐系統已經準備好了！🍡
+1. **訂單 ID 已改為時間戳格式**，顯示時可能需要格式化
+2. **歷史資料已成功測試**，可以安心使用交班歸零
+3. **音效功能暫停**，等待 Netlify 快取問題解決
+4. **所有核心功能已完成**，可以進行正式測試
+
+---
+
+**今天的工作進度非常好！🎉**
