@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef } from 'react';
 import { Bell, CalendarDays, RotateCcw } from 'lucide-react';
 import { useOrderStore } from '../../stores/orderStore';
+import { useSystemStore } from '../../stores/systemStore';
 import type { OrderStatus } from '../../types';
 import OrderCard from '../components/OrderCard';
 
@@ -28,20 +29,45 @@ function todayString(): string {
 export default function OrdersPage() {
   const orders = useOrderStore((s) => s.orders);
   const fetchOrders = useOrderStore((s) => s.fetchOrders);
+  const resetDaily = useOrderStore((s) => s.resetDaily);
+  const getTodayStartTime = useSystemStore((s) => s.getTodayStartTime);
+  const checkAutoShiftReset = useSystemStore((s) => s.checkAutoShiftReset);
+  
   const [activeFilter, setActiveFilter] = useState<'all' | OrderStatus>('all');
-  const [selectedDate, setSelectedDate] = useState(todayString());
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [lastShiftTime, setLastShiftTime] = useState<string>('');
+  const [displayDate, setDisplayDate] = useState<string>('');
 
-  const isToday = selectedDate === todayString();
-
-  // 初始載入訂單（Realtime 訂閱和音效提醒已在 AdminLayout 建立）
+  // 初始載入訂單和檢查自動交班
   useEffect(() => {
-    fetchOrders();
+    const init = async () => {
+      // 檢查是否需要自動交班
+      const needAutoReset = await checkAutoShiftReset();
+      if (needAutoReset) {
+        console.log('🔄 偵測到跨日，自動執行交班歸零...');
+        try {
+          await resetDaily();
+          alert('✅ 系統已自動執行交班歸零（偵測到跨日）');
+        } catch (error) {
+          console.error('自動交班失敗:', error);
+        }
+      }
+      
+      // 載入訂單
+      const todayStart = await getTodayStartTime();
+      setLastShiftTime(todayStart);
+      setDisplayDate(todayString()); // 顯示今天的日期
+      
+      // 載入今天的訂單（從最後交班時間開始）
+      await fetchOrders(todayStart);
+    };
+    
+    init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 只在元件掛載時執行一次
 
-  // 依日期篩選
-  const dateOrders = orders.filter((o) => toDateString(o.created_at) === selectedDate);
+  // 今天的訂單就是所有當前訂單（已經按交班時間過濾）
+  const dateOrders = orders;
 
   const pendingCount = dateOrders.filter((o) => o.status === 'pending').length;
   const filteredOrders = activeFilter === 'all'
@@ -62,9 +88,15 @@ export default function OrdersPage() {
 
   const handleReset = async () => {
     try {
-      const resetDaily = useOrderStore.getState().resetDaily;
       await resetDaily();
       setShowResetConfirm(false);
+      
+      // 重新載入今天的訂單
+      const todayStart = await getTodayStartTime();
+      setLastShiftTime(todayStart);
+      setDisplayDate(todayString());
+      await fetchOrders(todayStart);
+      
       alert('✅ 交班歸零成功！所有訂單已清空，桌位已重置。');
     } catch (error) {
       console.error('交班歸零失敗:', error);
@@ -91,26 +123,14 @@ export default function OrdersPage() {
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex items-center gap-2 bg-card border border-border rounded-[12px] px-4 py-2">
           <CalendarDays size={18} className="text-primary" />
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-transparent text-text-primary font-semibold text-sm outline-none cursor-pointer"
-          />
+          <span className="text-text-primary font-semibold text-sm">
+            今天 {displayDate}
+          </span>
         </div>
-
-        {!isToday && (
-          <button
-            onClick={() => setSelectedDate(todayString())}
-            className="px-4 py-2 rounded-[12px] bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors cursor-pointer"
-          >
-            回到今日
-          </button>
-        )}
 
         <div className="flex items-center gap-3 ml-auto">
           <span className="text-sm text-text-secondary">
-            {isToday ? '今日' : selectedDate} 營收：
+            今日營收：
             <span className="font-bold text-primary font-['Poppins'] ml-1">NT$ {dayRevenue}</span>
           </span>
           <button
@@ -147,9 +167,7 @@ export default function OrdersPage() {
       {filteredOrders.length === 0 ? (
         <div className="text-center py-16 text-text-hint">
           <span className="text-5xl block mb-4">📋</span>
-          <p className="text-lg">
-            {isToday ? '目前沒有訂單' : `${selectedDate} 沒有訂單`}
-          </p>
+          <p className="text-lg">目前沒有訂單</p>
         </div>
       ) : useCompact ? (
         <div className="flex flex-col gap-2">

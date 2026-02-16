@@ -361,6 +361,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       console.log('✅ 桌位已重置');
 
+      // 更新交班時間（記錄在 system_settings 中）
+      const resetTime = new Date().toISOString();
+      const { error: settingError } = await supabase
+        .from('system_settings')
+        .update({ setting_value: resetTime })
+        .eq('setting_key', 'last_shift_reset_time');
+
+      if (settingError) {
+        console.error('❌ 更新交班時間失敗:', settingError);
+      } else {
+        console.log('✅ 交班時間已記錄:', resetTime);
+      }
+
       // 重新載入資料
       await get().fetchOrders();
       await get().fetchTables();

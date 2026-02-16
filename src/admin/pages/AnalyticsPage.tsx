@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, ShoppingCart, DollarSign, Users } from 'lucide-react';
 import { useOrderStore } from '../../stores/orderStore';
+import { useSystemStore } from '../../stores/systemStore';
 import type { Order } from '../../types';
 
 export default function AnalyticsPage() {
   const fetchAllOrders = useOrderStore((s) => s.fetchAllOrders);
+  const getTodayStartTime = useSystemStore((s) => s.getTodayStartTime);
   const [orders, setOrders] = useState<Order[]>([]);
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'custom'>('today');
   const [startDate, setStartDate] = useState<string>('');
@@ -24,11 +26,8 @@ export default function AnalyticsPage() {
 
         switch (dateRange) {
           case 'today':
-            start = today.toISOString();
-            const endOfToday = new Date(today);
-            endOfToday.setDate(endOfToday.getDate() + 1);
-            endOfToday.setMilliseconds(-1);
-            end = endOfToday.toISOString();
+            // 「今天」= 從最後交班時間開始
+            start = await getTodayStartTime();
             break;
           case 'week':
             const weekAgo = new Date(today);
@@ -56,44 +55,10 @@ export default function AnalyticsPage() {
     };
 
     loadOrders();
-  }, [dateRange, startDate, endDate, fetchAllOrders]);
+  }, [dateRange, startDate, endDate, fetchAllOrders, getTodayStartTime]);
 
-  // 篩選訂單（根據日期範圍）
-  const getFilteredOrders = (): Order[] => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    return orders.filter(order => {
-      const orderDate = new Date(order.created_at);
-
-      switch (dateRange) {
-        case 'today':
-          return orderDate >= today;
-        
-        case 'week':
-          const weekAgo = new Date(today);
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return orderDate >= weekAgo;
-        
-        case 'month':
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(monthAgo.getMonth() - 1);
-          return orderDate >= monthAgo;
-        
-        case 'custom':
-          if (!startDate || !endDate) return true;
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999);
-          return orderDate >= start && orderDate <= end;
-        
-        default:
-          return true;
-      }
-    });
-  };
-
-  const filteredOrders = getFilteredOrders();
+  // 直接使用載入的訂單（已經在 useEffect 中按日期範圍過濾）
+  const filteredOrders = orders;
   
   // 計算統計數據 - 只計算完成的訂單
   const completedOrders = filteredOrders.filter(o => o.status === 'completed');
