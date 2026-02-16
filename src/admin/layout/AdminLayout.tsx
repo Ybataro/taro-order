@@ -53,20 +53,37 @@ export default function AdminLayout() {
   // 播放提示音（新訂單 / 取消訂單）
   const playNotificationSound = async (type: 'new' | 'cancel' = 'new') => {
     try {
-      // 確保 AudioContext 已初始化並恢復
-      const audioContext = audioContextRef.current;
+      // 確保 AudioContext 已初始化
+      let audioContext = audioContextRef.current;
+      
+      // 如果沒有 AudioContext，嘗試創建一個（在用戶互動後）
       if (!audioContext) {
-        console.warn('⚠️ AudioContext 未初始化，請先點擊頁面任何位置');
-        return;
+        console.warn('⚠️ AudioContext 未初始化，嘗試自動初始化...');
+        try {
+          audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioContextRef.current = audioContext;
+          console.log('🎵 AudioContext 已自動創建');
+        } catch (error) {
+          console.error('❌ AudioContext 創建失敗:', error);
+          return;
+        }
       }
 
-      // 恢復 AudioContext（如果被暫停）
-      if (audioContext.state === 'suspended') {
+      // 強制恢復 AudioContext（生產環境必須）
+      if (audioContext.state !== 'running') {
         try {
           await audioContext.resume();
-          console.log('🎵 AudioContext 已自動恢復');
+          console.log('🎵 AudioContext 已恢復為 running 狀態');
+          
+          // 等待一小段時間確保恢復完成
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          if (audioContext.state !== 'running') {
+            console.error('⚠️ AudioContext 無法恢復，當前狀態:', audioContext.state);
+            return;
+          }
         } catch (error) {
-          console.error('⚠️ AudioContext 恢復失敗，音效無法播放:', error);
+          console.error('⚠️ AudioContext 恢復失敗:', error);
           return;
         }
       }
@@ -124,23 +141,39 @@ export default function AdminLayout() {
     // 啟用 Supabase 即時訂閱
     const unsubscribe = useOrderStore.getState().subscribeToOrders();
     
-    // 監聽用戶第一次點擊/觸摸，初始化 AudioContext
-    const handleFirstInteraction = () => {
-      console.log('👆 偵測到用戶互動，嘗試初始化 AudioContext');
-      initAudioContext();
-      // 移除監聽器（只需要初始化一次）
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
+    // 監聽用戶互動，初始化並恢復 AudioContext
+    const handleUserInteraction = async () => {
+      console.log('👆 偵測到用戶互動，初始化/恢復 AudioContext');
+      await initAudioContext();
     };
     
-    document.addEventListener('click', handleFirstInteraction);
-    document.addEventListener('touchstart', handleFirstInteraction);
+    // 監聽多種互動事件
+    const events = ['click', 'touchstart', 'keydown', 'mousedown'];
+    events.forEach(event => {
+      document.addEventListener(event, handleUserInteraction, { once: true });
+    });
+    
+    // 每隔一段時間檢查並恢復 AudioContext（防止被瀏覽器暫停）
+    const keepAliveInterval = setInterval(async () => {
+      const ctx = audioContextRef.current;
+      if (ctx && ctx.state === 'suspended') {
+        console.log('🔄 定期檢查：AudioContext 被暫停，嘗試恢復...');
+        try {
+          await ctx.resume();
+          console.log('✅ AudioContext 已恢復');
+        } catch (error) {
+          console.error('❌ AudioContext 恢復失敗:', error);
+        }
+      }
+    }, 30000); // 每 30 秒檢查一次
     
     return () => {
       console.log('🌐 AdminLayout: 清理全局 Realtime 訂閱');
       unsubscribe();
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
+      events.forEach(event => {
+        document.removeEventListener(event, handleUserInteraction);
+      });
+      clearInterval(keepAliveInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 只在元件掛載時執行一次
