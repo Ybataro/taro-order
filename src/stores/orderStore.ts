@@ -361,21 +361,23 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       console.log('✅ 桌位已重置');
 
-      // 更新交班時間（記錄在 system_settings 中）
-      const resetTime = new Date().toISOString();
+      // 更新交班時間為今天的日期（YYYY-MM-DD）
+      const today = new Date().toISOString().split('T')[0];
       const { error: settingError } = await supabase
         .from('system_settings')
-        .update({ setting_value: resetTime })
+        .update({ setting_value: today })
         .eq('setting_key', 'last_shift_reset_time');
 
       if (settingError) {
         console.error('❌ 更新交班時間失敗:', settingError);
       } else {
-        console.log('✅ 交班時間已記錄:', resetTime);
+        console.log('✅ 交班時間已更新為今天:', today);
       }
 
-      // 重新載入資料
-      await get().fetchOrders();
+      // 重新載入今天 00:00 之後的訂單
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
+      await get().fetchOrders(todayMidnight.toISOString());
       await get().fetchTables();
 
       console.log('✅ 交班歸零成功，歷史資料已保存');
