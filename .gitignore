@@ -40,3 +40,6 @@ Thumbs.db
 # Temporary files
 tmp_rovodev_*
 nul
+
+# 本地備份資料夾
+src_backup_*/
