@@ -27,13 +27,26 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   loading: false,
 
   // 從 Supabase 載入所有訂單
-  fetchOrders: async () => {
+  fetchOrders: async (startDate?: string, endDate?: string) => {
     try {
       set({ loading: true });
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('orders')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // 如果有日期範圍，加入過濾條件
+      if (startDate) {
+        query = query.gte('created_at', startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query = query.lte('created_at', end.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -280,17 +293,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   // 載入所有訂單（包含當前和歷史）
   fetchAllOrders: async (startDate?: string, endDate?: string) => {
     try {
-      // 同時查詢當前訂單和歷史訂單
-      const [currentOrders, historyOrders] = await Promise.all([
-        get().fetchOrders().then(() => get().orders),
+      // 同時查詢當前訂單和歷史訂單，傳入日期範圍
+      const [currentOrdersResult, historyOrders] = await Promise.all([
+        (async () => {
+          await get().fetchOrders(startDate, endDate);
+          return get().orders;
+        })(),
         get().fetchOrderHistory(startDate, endDate)
       ]);
 
       // 合併並按時間排序
-      const allOrders = [...currentOrders, ...historyOrders];
+      const allOrders = [...currentOrdersResult, ...historyOrders];
       allOrders.sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
+
+      console.log(`📊 載入訂單統計: 當前訂單 ${currentOrdersResult.length} 筆, 歷史訂單 ${historyOrders.length} 筆, 總計 ${allOrders.length} 筆`);
 
       return allOrders;
     } catch (error) {

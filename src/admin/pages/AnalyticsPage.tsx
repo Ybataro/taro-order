@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
 
   const filteredOrders = getFilteredOrders();
   
-  // 計算統計數據
+  // 計算統計數據 - 只計算完成的訂單
   const completedOrders = filteredOrders.filter(o => o.status === 'completed');
   const totalRevenue = completedOrders.reduce((sum, order) => sum + order.total_price, 0);
   const totalOrders = completedOrders.length;
