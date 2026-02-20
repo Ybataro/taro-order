@@ -25,17 +25,18 @@ ALTER TABLE order_history ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable all access for order_history" ON order_history
   FOR ALL USING (true) WITH CHECK (true);
 
--- 建立歸檔訂單的函數
+-- 建立歸檔訂單的函數（ON CONFLICT 避免重複歸檔失敗）
 CREATE OR REPLACE FUNCTION archive_orders()
 RETURNS void
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  -- 將當前所有訂單複製到歷史表
+  -- 將當前所有訂單複製到歷史表（如果 ID 已存在則跳過）
   INSERT INTO order_history (id, table_number, items, total_price, status, notes, payment_method, created_at, archived_at)
   SELECT id, table_number, items, total_price, status, notes, payment_method, created_at, NOW()
-  FROM orders;
-  
+  FROM orders
+  ON CONFLICT (id) DO NOTHING;
+
   -- 刪除原訂單表中的所有訂單
   DELETE FROM orders;
 END;

@@ -64,27 +64,33 @@ export const useSystemStore = create<SystemState>((set, get) => ({
     }
   },
 
-  // 獲取「今天」的開始時間
+  // 獲取「今天」的開始時間（台灣時區 UTC+8）
   getTodayStartTime: async () => {
     const lastResetTime = get().lastShiftResetTime || await get().fetchLastShiftResetTime();
-    
-    // 如果最後交班時間是日期格式（YYYY-MM-DD），轉換為當天的 00:00:00
+
+    // 如果最後交班時間是日期格式（YYYY-MM-DD），轉換為台灣時區的 00:00:00 UTC
     if (lastResetTime.length === 10) {
-      return `${lastResetTime}T00:00:00`;
+      // "2026-02-20" → 台灣 00:00 = UTC 前一天 16:00
+      return `${lastResetTime}T00:00:00+08:00`;
     }
-    
+
     return lastResetTime;
   },
 
-  // 檢查是否需要自動交班
+  // 檢查是否需要自動交班（使用台灣時區）
   checkAutoShiftReset: async () => {
     try {
       const lastResetTime = get().lastShiftResetTime || await get().fetchLastShiftResetTime();
-      const lastResetDate = new Date(lastResetTime).toISOString().split('T')[0];
-      const today = new Date().toISOString().split('T')[0];
+      // lastResetTime 是 YYYY-MM-DD 格式
+      const lastResetDate = lastResetTime.length === 10
+        ? lastResetTime
+        : new Date(lastResetTime).toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+
+      // 取得台灣時區的今天日期
+      const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 
       // 如果最後交班日期不是今天，表示過了 00:00，需要自動交班
-      if (lastResetDate < today) {
+      if (lastResetDate < todayTW) {
         console.log('🔄 檢測到跨日，執行自動交班歸零...');
         return true;
       }

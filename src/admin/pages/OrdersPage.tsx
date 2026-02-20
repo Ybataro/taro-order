@@ -23,7 +23,7 @@ function toDateString(iso: string): string {
 }
 
 function todayString(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 }
 
 export default function OrdersPage() {
@@ -38,33 +38,49 @@ export default function OrdersPage() {
   const [lastShiftTime, setLastShiftTime] = useState<string>('');
   const [displayDate, setDisplayDate] = useState<string>('');
 
-  // 初始載入訂單和檢查自動交班
-  useEffect(() => {
-    const init = async () => {
-      // 檢查是否需要自動交班
+  // 執行自動交班檢查（初始 + 定時）
+  const autoResetRunning = useRef(false);
+
+  const runAutoResetCheck = async () => {
+    if (autoResetRunning.current) return;
+    autoResetRunning.current = true;
+    try {
       const needAutoReset = await checkAutoShiftReset();
       if (needAutoReset) {
         console.log('🔄 偵測到跨日，自動執行交班歸零...');
-        try {
-          await resetDaily();
-          alert('✅ 系統已自動執行交班歸零（偵測到跨日）');
-        } catch (error) {
-          console.error('自動交班失敗:', error);
-        }
+        await resetDaily();
+        const todayStart = await getTodayStartTime();
+        setLastShiftTime(todayStart);
+        setDisplayDate(todayString());
+        await fetchOrders(todayStart);
+        alert('✅ 系統已自動執行交班歸零（偵測到跨日）');
       }
-      
+    } catch (error) {
+      console.error('自動交班失敗:', error);
+    } finally {
+      autoResetRunning.current = false;
+    }
+  };
+
+  // 初始載入 + 每 30 秒檢查跨日
+  useEffect(() => {
+    const init = async () => {
+      await runAutoResetCheck();
+
       // 載入訂單
       const todayStart = await getTodayStartTime();
       setLastShiftTime(todayStart);
-      setDisplayDate(todayString()); // 顯示今天的日期
-      
-      // 載入今天的訂單（從最後交班時間開始）
+      setDisplayDate(todayString());
       await fetchOrders(todayStart);
     };
-    
+
     init();
+
+    // 每 30 秒檢查是否跨日需要自動交班
+    const intervalId = setInterval(runAutoResetCheck, 30_000);
+    return () => clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 只在元件掛載時執行一次
+  }, []);
 
   // 今天的訂單就是所有當前訂單（已經按交班時間過濾）
   const dateOrders = orders;

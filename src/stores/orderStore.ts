@@ -173,9 +173,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   // 訂閱即時更新
   subscribeToOrders: () => {
-    console.log('🔔 正在建立 Realtime 訂閱...');
-    console.log('📋 訂閱目標: orders 和 tables 表');
-    
     const channel = supabase
       .channel('orders-changes')
       .on(
@@ -186,47 +183,23 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           table: 'orders',
         },
         (payload) => {
-          console.log('═══════════════════════════════════');
-          console.log('🎉 訂單變更事件:', payload.eventType);
-          console.log('📊 完整 payload:', payload);
-          console.log('═══════════════════════════════════');
-          console.log('🔍 DEBUG: 進入 payload 處理回調');
-          
           try {
-            console.log('🔍 DEBUG: 進入 try 區塊');
             const currentOrders = get().orders;
-            console.log('🔍 DEBUG: get().orders 成功，長度:', currentOrders.length);
-            console.log('📋 當前訂單數:', currentOrders.length);
-            
+
             if (payload.eventType === 'INSERT') {
-              // 新增訂單：直接加入狀態（使用新陣列確保 React 偵測到變化）
               const newOrder = payload.new as Order;
-              console.log('➕ 新訂單資料:', newOrder);
-              const newOrders = [newOrder, ...currentOrders];
-              console.log('📦 建立新陣列，長度:', newOrders.length);
-              set({ orders: newOrders });
-              console.log('✅ 新訂單已加入狀態，目前訂單數:', get().orders.length);
-              
-              // 強制觸發狀態更新通知
-              const state = get();
-              console.log('🔄 強制通知訂閱者，訂單數:', state.orders.length);
+              set({ orders: [newOrder, ...currentOrders] });
             } else if (payload.eventType === 'UPDATE') {
-              // 更新訂單：替換對應的訂單
               const updatedOrder = payload.new as Order;
-              const updatedOrders = currentOrders.map(order =>
+              set({ orders: currentOrders.map(order =>
                 order.id === updatedOrder.id ? updatedOrder : order
-              );
-              set({ orders: updatedOrders });
-              console.log('🔄 訂單已更新:', updatedOrder.id, '狀態:', updatedOrder.status);
+              ) });
             } else if (payload.eventType === 'DELETE') {
-              // 刪除訂單：移除對應的訂單
               const deletedId = payload.old.id;
-              const filteredOrders = currentOrders.filter(order => order.id !== deletedId);
-              set({ orders: filteredOrders });
-              console.log('🗑️ 訂單已刪除:', deletedId);
+              set({ orders: currentOrders.filter(order => order.id !== deletedId) });
             }
           } catch (error) {
-            console.error('❌ 處理訂單變更事件時發生錯誤:', error);
+            console.error('處理訂單變更事件時發生錯誤:', error);
           }
         }
       )
@@ -237,27 +210,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           schema: 'public',
           table: 'tables',
         },
-        (payload) => {
-          console.log('🪑 桌位變更事件:', payload.eventType, payload);
-          // 重新載入桌位
+        () => {
           get().fetchTables();
         }
       )
       .subscribe((status, err) => {
-        console.log('📡 Realtime 訂閱狀態:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Realtime 訂閱成功！');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Realtime 訂閱失敗！錯誤:', err);
-        } else if (status === 'TIMED_OUT') {
-          console.error('⏱️ Realtime 訂閱超時');
-        } else if (status === 'CLOSED') {
-          console.warn('🔌 Realtime 連接已關閉');
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Realtime 訂閱失敗:', err);
         }
       });
 
     return () => {
-      console.log('🔌 取消 Realtime 訂閱');
       supabase.removeChannel(channel);
     };
   },
@@ -290,25 +253,41 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  // 載入所有訂單（包含當前和歷史）
+  // 載入所有訂單（包含當前和歷史）— 不修改全域 orders state
   fetchAllOrders: async (startDate?: string, endDate?: string) => {
     try {
-      // 同時查詢當前訂單和歷史訂單，傳入日期範圍
-      const [currentOrdersResult, historyOrders] = await Promise.all([
-        (async () => {
-          await get().fetchOrders(startDate, endDate);
-          return get().orders;
-        })(),
+      // 獨立查詢當前訂單（不影響全域 state）
+      let currentQuery = supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (startDate) {
+        currentQuery = currentQuery.gte('created_at', startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        currentQuery = currentQuery.lte('created_at', end.toISOString());
+      }
+
+      const [currentResult, historyOrders] = await Promise.all([
+        currentQuery,
         get().fetchOrderHistory(startDate, endDate)
       ]);
 
+      const currentOrders = currentResult.data || [];
+      if (currentResult.error) {
+        console.error('Error fetching current orders for analytics:', currentResult.error);
+      }
+
       // 合併並按時間排序
-      const allOrders = [...currentOrdersResult, ...historyOrders];
-      allOrders.sort((a, b) => 
+      const allOrders = [...currentOrders, ...historyOrders];
+      allOrders.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
-      console.log(`📊 載入訂單統計: 當前訂單 ${currentOrdersResult.length} 筆, 歷史訂單 ${historyOrders.length} 筆, 總計 ${allOrders.length} 筆`);
+      console.log(`📊 載入訂單統計: 當前訂單 ${currentOrders.length} 筆, 歷史訂單 ${historyOrders.length} 筆, 總計 ${allOrders.length} 筆`);
 
       return allOrders;
     } catch (error) {
@@ -317,19 +296,20 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  // 生成唯一訂單編號（使用時間戳 + 隨機數確保唯一性）
+  // 生成唯一訂單編號（使用 crypto.randomUUID 確保唯一性）
   generateDailyOrderNumber: async () => {
     try {
-      // 使用時間戳 + 隨機數生成唯一 ID
+      // 使用 UUID 確保絕對唯一
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      // Fallback: 時間戳 + 較大隨機數
       const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000);
-      const orderId = `${timestamp}${random}`;
-      
-      return orderId;
+      const random = Math.floor(Math.random() * 1000000);
+      return `${timestamp}-${random}`;
     } catch (error) {
       console.error('Error generating order number:', error);
-      // 如果出錯，使用時間戳作為備用
-      return Date.now().toString();
+      return `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     }
   },
 
@@ -361,23 +341,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       console.log('✅ 桌位已重置');
 
-      // 更新交班時間為今天的日期（YYYY-MM-DD）
-      const today = new Date().toISOString().split('T')[0];
+      // 更新交班時間為今天的日期（YYYY-MM-DD，台灣時區）
+      const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
       const { error: settingError } = await supabase
         .from('system_settings')
-        .update({ setting_value: today })
+        .update({ setting_value: todayTW })
         .eq('setting_key', 'last_shift_reset_time');
 
       if (settingError) {
         console.error('❌ 更新交班時間失敗:', settingError);
       } else {
-        console.log('✅ 交班時間已更新為今天:', today);
+        console.log('✅ 交班時間已更新為今天:', todayTW);
       }
 
-      // 重新載入今天 00:00 之後的訂單
-      const todayMidnight = new Date();
-      todayMidnight.setHours(0, 0, 0, 0);
-      await get().fetchOrders(todayMidnight.toISOString());
+      // 重新載入今天 00:00（台灣時區）之後的訂單
+      const todayStartTW = `${todayTW}T00:00:00+08:00`;
+      await get().fetchOrders(todayStartTW);
       await get().fetchTables();
 
       console.log('✅ 交班歸零成功，歷史資料已保存');
