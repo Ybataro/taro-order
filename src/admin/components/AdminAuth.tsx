@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 
-const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN || '1234';
+const ADMIN_PIN = '0000';
 const SESSION_KEY = 'taro_admin_auth';
 
 export default function AdminAuth({ children }: { children: React.ReactNode }) {
