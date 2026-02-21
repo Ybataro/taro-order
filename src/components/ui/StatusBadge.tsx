@@ -11,8 +11,10 @@ interface StatusBadgeProps {
   status: OrderStatus;
 }
 
+const fallback = { label: '未知', bg: 'bg-border', text: 'text-text-hint' };
+
 export default function StatusBadge({ status }: StatusBadgeProps) {
-  const c = config[status];
+  const c = config[status] || fallback;
   return (
     <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-semibold ${c.bg} ${c.text}`}>
       {c.label}

@@ -10,7 +10,7 @@ interface OrderCardProps {
   compact?: boolean;
 }
 
-const borderColors = {
+const borderColors: Record<string, string> = {
   pending: 'border-l-warning',
   preparing: 'border-l-info',
   completed: 'border-l-success',
@@ -53,7 +53,7 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
   // 精簡模式：一行顯示摘要，可展開明細
   if (compact) {
     return (
-      <div className={`bg-card rounded-[12px] shadow-[var(--shadow-card)] border-l-4 ${borderColors[order.status]} overflow-hidden`}>
+      <div className={`bg-card rounded-[12px] shadow-[var(--shadow-card)] border-l-4 ${borderColors[order.status] || 'border-l-border'} overflow-hidden`}>
         {/* 摘要列 */}
         <div
           className="p-4 flex items-center justify-between cursor-pointer"
@@ -115,7 +115,7 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
 
   // 完整模式：進行中的訂單（pending / accepted / cooking）
   return (
-    <div className={`bg-card rounded-[12px] shadow-[var(--shadow-card)] border-l-4 ${borderColors[order.status]} overflow-hidden`}>
+    <div className={`bg-card rounded-[12px] shadow-[var(--shadow-card)] border-l-4 ${borderColors[order.status] || 'border-l-border'} overflow-hidden`}>
       {/* 標題列 */}
       <div className="p-4 pb-3">
         <div className="flex items-center justify-between mb-2">
