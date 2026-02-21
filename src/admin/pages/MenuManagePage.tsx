@@ -4,6 +4,8 @@ import { useMenuStore } from '../../stores/menuStore';
 import type { MenuItem } from '../../types';
 import Button from '../../components/ui/Button';
 
+const AVAILABLE_TAGS = ['招牌', '熱銷', '新品', '季節限定'];
+
 export default function MenuManagePage() {
   const { 
     categories, 
@@ -28,6 +30,7 @@ export default function MenuManagePage() {
     categoryId: categories[0]?.id || '',
     subcategoryId: '',
     image: '',
+    tags: [] as string[],
   });
 
   const filteredItems = filterCategoryId === 'all'
@@ -51,6 +54,7 @@ export default function MenuManagePage() {
       categoryId: categories[0]?.id || '',
       subcategoryId: categories[0]?.subcategories[0]?.id || '',
       image: '',
+      tags: [],
     });
     setShowForm(true);
   };
@@ -64,6 +68,7 @@ export default function MenuManagePage() {
       categoryId: item.categoryId,
       subcategoryId: item.subcategoryId,
       image: item.image,
+      tags: item.tags || [],
     });
     setShowForm(true);
   };
@@ -165,6 +170,15 @@ export default function MenuManagePage() {
                 <td className="p-4">
                   <span className="font-semibold text-text-primary">{item.name}</span>
                   <p className="text-xs text-text-hint mt-0.5 truncate max-w-48">{item.description}</p>
+                  {item.tags && item.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {item.tags.map(tag => (
+                        <span key={tag} className="inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-accent/20 text-accent">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="p-4 font-semibold font-['Poppins'] text-text-primary">
                   ${item.price}
@@ -321,6 +335,35 @@ export default function MenuManagePage() {
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* 標籤 */}
+              <div>
+                <label className="block text-sm font-semibold text-text-secondary mb-2">標籤</label>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_TAGS.map(tag => (
+                    <label key={tag} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm cursor-pointer border transition-colors ${
+                      formData.tags.includes(tag)
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-card text-text-secondary border-border hover:border-primary'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={formData.tags.includes(tag)}
+                        onChange={(e) => {
+                          setFormData(p => ({
+                            ...p,
+                            tags: e.target.checked
+                              ? [...p.tags, tag]
+                              : p.tags.filter(t => t !== tag)
+                          }));
+                        }}
+                      />
+                      {tag}
+                    </label>
+                  ))}
                 </div>
               </div>
 

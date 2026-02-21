@@ -23,6 +23,7 @@ export interface MenuItem {
   categoryId: string;
   subcategoryId: string;
   isAvailable: boolean;
+  tags?: string[];
 }
 
 // 加購品項

@@ -7,6 +7,16 @@ interface MenuCardProps {
   item: MenuItem;
 }
 
+const tagStyle = (tag: string): string => {
+  switch (tag) {
+    case '招牌': return 'bg-accent/20 text-accent';
+    case '熱銷': return 'bg-error/10 text-error';
+    case '新品': return 'bg-success/10 text-success';
+    case '季節限定': return 'bg-info/10 text-info';
+    default: return 'bg-secondary text-text-secondary';
+  }
+};
+
 export default function MenuCard({ item }: MenuCardProps) {
   const [showModal, setShowModal] = useState(false);
 
@@ -25,6 +35,15 @@ export default function MenuCard({ item }: MenuCardProps) {
         {/* 品項資訊 */}
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-text-primary truncate">{item.name}</h3>
+          {item.tags && item.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {item.tags.map(tag => (
+                <span key={tag} className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${tagStyle(tag)}`}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
           <p className="text-sm text-text-hint mt-1 line-clamp-1">{item.description}</p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-xl font-semibold text-primary font-['Poppins']">

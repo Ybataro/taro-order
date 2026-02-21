@@ -97,6 +97,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         categoryId: item.category_id,
         subcategoryId: item.subcategory_id || undefined,
         isAvailable: item.is_available,
+        tags: item.tags || [],
       }));
 
       set({ menuItems, isLoading: false });
@@ -146,6 +147,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
           category_id: item.categoryId,
           subcategory_id: item.subcategoryId,
           is_available: item.isAvailable,
+          tags: item.tags || [],
         }])
         .select()
         .single();
@@ -173,6 +175,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId;
       if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId;
       if (updates.isAvailable !== undefined) dbUpdates.is_available = updates.isAvailable;
+      if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
 
       const { error } = await supabase
         .from('menu_items')
