@@ -1,32 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  /* 古早味文青風 — 取自品牌官網配色 */
-  --color-primary: #B5975A;
-  --color-primary-dark: #96794A;
-  --color-primary-light: #D4BE90;
-  --color-secondary: #EDE4D6;
-  --color-accent: #C8A76E;
-  --color-warm-white: #F7F1E8;
-  --color-dark-brown: #2C2218;
-  --color-success: #6B9B6A;
-  --color-warning: #D9A44A;
-  --color-error: #BF4B3B;
-  --color-info: #6A8FAD;
-  --color-text-primary: #2C2218;
-  --color-text-secondary: #6B5B48;
-  --color-text-hint: #9A8A76;
-  --color-border: #DDD0C0;
-  --color-bg: #F7F1E8;
+  /* 統一配色 — 與 Yba_order 叫貨系統一致 */
+  --color-primary: #9E9590;
+  --color-primary-dark: #7A6E5F;
+  --color-primary-light: #C9AC84;
+  --color-secondary: #EDE6DF;
+  --color-accent: #D4A853;
+  --color-warm-white: #F5F0EB;
+  --color-dark-brown: #6B5D55;
+  --color-success: #4CAF50;
+  --color-warning: #FB8C00;
+  --color-error: #E53935;
+  --color-info: #42A5F5;
+  --color-text-primary: #6B5D55;
+  --color-text-secondary: #9E9590;
+  --color-text-hint: #B8B0AB;
+  --color-border: #D4CEC8;
+  --color-bg: #F5F0EB;
   --color-card: #FFFFFF;
-  --color-status-pending-bg: #FDF3E4;
-  --color-status-cooking-bg: #E8EFF8;
-  --color-status-done-bg: #E8F3E8;
-  --color-table-empty: #E8F3E8;
-  --color-table-occupied: #FDF3E4;
-  --shadow-card: 0 1px 4px rgba(44, 34, 24, 0.06);
-  --shadow-md: 0 4px 12px rgba(44, 34, 24, 0.10);
-  --shadow-lg: 0 8px 24px rgba(44, 34, 24, 0.14);
+  --color-status-pending-bg: #FFF3E0;
+  --color-status-cooking-bg: #E3F2FD;
+  --color-status-done-bg: #E8F5E9;
+  --color-table-empty: #E8F5E9;
+  --color-table-occupied: #FFF3E0;
+  --shadow-card: 0 1px 4px rgba(107, 93, 85, 0.06);
+  --shadow-md: 0 4px 12px rgba(107, 93, 85, 0.10);
+  --shadow-lg: 0 8px 24px rgba(107, 93, 85, 0.14);
   --font-sans: 'Noto Sans TC', 'Poppins', 'Microsoft JhengHei', sans-serif;
   --font-serif: 'Noto Serif TC', 'serif';
 }
