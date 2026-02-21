@@ -16,7 +16,7 @@ export default function CategoryTabs({ categories, activeId, onSelect }: Categor
           className={`flex-shrink-0 px-5 py-3 text-base font-semibold transition-colors cursor-pointer whitespace-nowrap ${
             activeId === cat.id
               ? 'text-primary-light border-b-[3px] border-primary-light'
-              : 'text-[#9E8E7A] border-b-[3px] border-transparent hover:text-primary-light'
+              : 'text-text-hint border-b-[3px] border-transparent hover:text-primary-light'
           }`}
         >
           {cat.name}
