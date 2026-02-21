@@ -25,7 +25,7 @@ export default function TablesPage() {
 
   // 進行中的訂單（用於桌位卡片顯示筆數）
   const getActiveOrders = (tableNumber: number): Order[] =>
-    orders.filter((o) => o.table_number === tableNumber && o.status !== 'completed' && o.status !== 'cancelled');
+    orders.filter((o) => o.table_number === tableNumber && (o.status === 'pending' || o.status === 'preparing'));
 
   // 該桌最新一筆訂單（排除已取消）
   const getLatestTableOrder = (tableNumber: number): Order | undefined => {
@@ -103,7 +103,7 @@ export default function TablesPage() {
               return (
                 <div className="border border-border rounded-[8px] p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-['Poppins'] text-text-hint">{latestOrder.id}</span>
+                    <span className="text-sm font-bold font-['Poppins'] text-text-primary">#{String(latestOrder.display_number || 0).padStart(2, '0')}</span>
                     <StatusBadge status={latestOrder.status} />
                   </div>
                   {latestOrder.items.map((item, idx) => (
