@@ -53,39 +53,12 @@ export default function AdminLayout() {
   // 播放提示音（新訂單 / 取消訂單）
   const playNotificationSound = async (type: 'new' | 'cancel' = 'new') => {
     try {
-      // 確保 AudioContext 已初始化
-      let audioContext = audioContextRef.current;
-      
-      // 如果沒有 AudioContext，嘗試創建一個（在用戶互動後）
-      if (!audioContext) {
-        console.warn('⚠️ AudioContext 未初始化，嘗試自動初始化...');
-        try {
-          audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-          audioContextRef.current = audioContext;
-          console.log('🎵 AudioContext 已自動創建');
-        } catch (error) {
-          console.error('❌ AudioContext 創建失敗:', error);
-          return;
-        }
-      }
+      const audioContext = audioContextRef.current;
 
-      // 強制恢復 AudioContext（生產環境必須）
-      if (audioContext.state !== 'running') {
-        try {
-          await audioContext.resume();
-          console.log('🎵 AudioContext 已恢復為 running 狀態');
-          
-          // 等待一小段時間確保恢復完成
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          if (audioContext.state !== 'running') {
-            console.error('⚠️ AudioContext 無法恢復，當前狀態:', audioContext.state);
-            return;
-          }
-        } catch (error) {
-          console.error('⚠️ AudioContext 恢復失敗:', error);
-          return;
-        }
+      // AudioContext 尚未由用戶互動初始化，跳過播放
+      if (!audioContext || audioContext.state !== 'running') {
+        console.warn('⚠️ AudioContext 尚未就緒，跳過播放 (state:', audioContext?.state, ')');
+        return;
       }
       
       if (type === 'new') {
@@ -195,19 +168,18 @@ export default function AdminLayout() {
       .filter(o => previousOrderIds.has(o.id))
       .map(o => o.id);
     
-    if (newOrderIds.length > 0) {
-      console.log('🆕 發現新訂單:', newOrderIds);
-      playNotificationSound('new');
-    }
-    
-    if (newCancelledIds.length > 0) {
-      console.log('❌ 訂單已取消:', newCancelledIds);
-      playNotificationSound('cancel');
-    }
-    
-    // 更新已知訂單列表（包含所有狀態的訂單）
-    if (previousOrderIds.size === 0) {
-      // 初始化：記錄當前所有訂單，避免首次載入時誤判
+    // 只在已完成初始化後才播放音效（避免首次載入時誤判全部為新訂單）
+    if (previousOrderIds.size > 0) {
+      if (newOrderIds.length > 0) {
+        console.log('🆕 發現新訂單:', newOrderIds);
+        playNotificationSound('new');
+      }
+
+      if (newCancelledIds.length > 0) {
+        console.log('❌ 訂單已取消:', newCancelledIds);
+        playNotificationSound('cancel');
+      }
+    } else {
       console.log('📋 初始化訂單追蹤，當前訂單數:', orders.length);
     }
     knownOrderIdsRef.current = currentAllOrderIds;
