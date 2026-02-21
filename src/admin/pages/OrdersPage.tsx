@@ -8,9 +8,7 @@ import OrderCard from '../components/OrderCard';
 const filters: { key: 'all' | OrderStatus; label: string }[] = [
   { key: 'all', label: '全部' },
   { key: 'pending', label: '新訂單' },
-  { key: 'confirmed', label: '已確認' },
   { key: 'preparing', label: '準備中' },
-  { key: 'ready', label: '可取餐' },
   { key: 'completed', label: '已完成' },
   { key: 'cancelled', label: '已取消' },
 ];

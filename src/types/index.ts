@@ -49,11 +49,12 @@ export interface CartItem {
 }
 
 // 訂單狀態
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+export type OrderStatus = 'pending' | 'preparing' | 'completed' | 'cancelled';
 
 // 訂單
 export interface Order {
   id: string;
+  display_number?: number;
   table_number: number;
   items: OrderItem[];
   status: OrderStatus;

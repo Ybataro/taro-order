@@ -18,7 +18,7 @@ interface OrderState {
   fetchAllOrders: (startDate?: string, endDate?: string) => Promise<Order[]>;
   subscribeToOrders: () => (() => void);
   resetDaily: () => Promise<void>;
-  generateDailyOrderNumber: () => Promise<string>;
+  generateDailyOrderNumber: () => Promise<{ id: string; displayNumber: number }>;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
@@ -79,6 +79,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const { error } = await supabase.from('orders').insert([
         {
           id: order.id,
+          display_number: order.display_number || 0,
           table_number: order.table_number,
           items: order.items,
           total_price: order.total_price,
@@ -296,20 +297,35 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  // 生成唯一訂單編號（使用 crypto.randomUUID 確保唯一性）
+  // 生成訂單：UUID 作為主鍵 + 每日遞增 display_number
   generateDailyOrderNumber: async () => {
     try {
-      // 使用 UUID 確保絕對唯一
-      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return crypto.randomUUID();
+      const id = crypto.randomUUID();
+
+      // 取得台灣時區今日日期範圍
+      const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+      const todayStart = `${todayTW}T00:00:00+08:00`;
+      const todayEnd = `${todayTW}T23:59:59+08:00`;
+
+      // 查詢今日最大 display_number
+      const { data, error } = await supabase
+        .from('orders')
+        .select('display_number')
+        .gte('created_at', todayStart)
+        .lte('created_at', todayEnd)
+        .order('display_number', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('查詢 display_number 失敗:', error);
+        return { id, displayNumber: 1 };
       }
-      // Fallback: 時間戳 + 較大隨機數
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000000);
-      return `${timestamp}-${random}`;
+
+      const maxNum = data && data.length > 0 ? (data[0].display_number || 0) : 0;
+      return { id, displayNumber: maxNum + 1 };
     } catch (error) {
       console.error('Error generating order number:', error);
-      return `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+      return { id: crypto.randomUUID(), displayNumber: 1 };
     }
   },
 

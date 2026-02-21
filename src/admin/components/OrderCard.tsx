@@ -12,9 +12,7 @@ interface OrderCardProps {
 
 const borderColors = {
   pending: 'border-l-warning',
-  confirmed: 'border-l-warning',
   preparing: 'border-l-info',
-  ready: 'border-l-info',
   completed: 'border-l-success',
   cancelled: 'border-l-error',
 };
@@ -35,12 +33,8 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
 
   const handleAction = () => {
     if (order.status === 'pending') {
-      updateOrderStatus(order.id, 'confirmed');
-    } else if (order.status === 'confirmed') {
       updateOrderStatus(order.id, 'preparing');
     } else if (order.status === 'preparing') {
-      updateOrderStatus(order.id, 'ready');
-    } else if (order.status === 'ready') {
       updateOrderStatus(order.id, 'completed');
     }
   };
@@ -50,10 +44,8 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
   };
 
   const actionLabel = {
-    pending: '確認訂單',
-    confirmed: '開始準備',
-    preparing: '準備完成',
-    ready: '已取餐',
+    pending: '開始準備',
+    preparing: '完成出餐',
     completed: '',
     cancelled: '',
   }[order.status];
@@ -69,7 +61,7 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
         >
           <div className="flex items-center gap-3 min-w-0">
             <span className="font-bold text-primary whitespace-nowrap">第 {order.table_number} 桌</span>
-            <span className="text-sm text-text-hint font-['Poppins'] truncate">{order.id}</span>
+            <span className="text-base font-bold text-text-primary font-['Poppins']">#{String(order.display_number || 0).padStart(2, '0')}</span>
             <span className="text-sm text-text-hint whitespace-nowrap">{createdDateStr} {createdTime}</span>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0 ml-3">
@@ -131,7 +123,7 @@ export default function OrderCard({ order, compact = false }: OrderCardProps) {
           <StatusBadge status={order.status} />
         </div>
         <div className="flex items-center justify-between text-sm text-text-hint">
-          <span className="font-['Poppins']">{order.id}</span>
+          <span className="text-lg font-bold text-text-primary font-['Poppins']">#{String(order.display_number || 0).padStart(2, '0')}</span>
           <span>{createdDateStr} {createdTime}</span>
         </div>
       </div>

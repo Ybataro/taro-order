@@ -31,11 +31,12 @@ export default function CartPage() {
     try {
       setIsSubmitting(true);
 
-      // 生成唯一訂單編號
-      const orderNumber = await generateDailyOrderNumber();
+      // 生成訂單編號（UUID + 每日遞增 displayNumber）
+      const { id, displayNumber } = await generateDailyOrderNumber();
 
       const order = {
-        id: orderNumber,
+        id,
+        display_number: displayNumber,
         table_number: tableNumber,
         items: items.map((i) => {
           const customText = formatCustomization(i);
@@ -56,7 +57,7 @@ export default function CartPage() {
 
       await addOrder(order);
       clearCart();
-      navigate(`/thank-you/${order.id}`);
+      navigate(`/thank-you/${order.id}?n=${displayNumber}`);
     } catch (error) {
       console.error('送出訂單失敗:', error);
       alert('送出訂單失敗，請重試');

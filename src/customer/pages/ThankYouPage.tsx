@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import Button from '../../components/ui/Button';
 
 export default function ThankYouPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const displayNumber = searchParams.get('n');
 
   // 3秒後自動跳轉到訂單狀態頁面
   useEffect(() => {
@@ -47,7 +49,9 @@ export default function ThankYouPage() {
         {orderId && (
           <div className="bg-card rounded-xl shadow-md p-4 mb-6">
             <p className="text-sm text-text-hint mb-1">您的訂單編號</p>
-            <p className="text-2xl font-bold text-primary font-['Poppins']">{orderId}</p>
+            <p className="text-2xl font-bold text-primary font-['Poppins']">
+              #{String(displayNumber || '0').padStart(2, '0')}
+            </p>
           </div>
         )}
 

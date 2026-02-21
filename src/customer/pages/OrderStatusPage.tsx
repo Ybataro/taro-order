@@ -7,9 +7,8 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import Button from '../../components/ui/Button';
 
 const steps = [
-  { key: 'confirmed', label: '已確認' },
   { key: 'preparing', label: '準備中' },
-  { key: 'ready', label: '可取餐' },
+  { key: 'completed', label: '完成取餐' },
 ] as const;
 
 function getStepIndex(status: string): number {
@@ -152,7 +151,9 @@ export default function OrderStatusPage() {
         {/* 訂單編號 & 桌號 */}
         <div className="text-center mb-6">
           <p className="text-sm text-text-hint">訂單編號</p>
-          <p className="text-xl font-bold text-text-primary font-['Poppins']">{order.id}</p>
+          <p className="text-2xl font-bold text-primary font-['Poppins']">
+            #{String(order.display_number || 0).padStart(2, '0')}
+          </p>
           <p className="text-base text-primary font-semibold mt-1">第 {order.table_number} 桌</p>
         </div>
 

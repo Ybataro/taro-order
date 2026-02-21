@@ -1,10 +1,8 @@
 import type { OrderStatus } from '../../types';
 
 const config: Record<OrderStatus, { label: string; bg: string; text: string }> = {
-  pending: { label: '待確認', bg: 'bg-status-pending-bg', text: 'text-warning' },
-  confirmed: { label: '已確認', bg: 'bg-status-pending-bg', text: 'text-warning' },
+  pending: { label: '新訂單', bg: 'bg-status-pending-bg', text: 'text-warning' },
   preparing: { label: '準備中', bg: 'bg-status-cooking-bg', text: 'text-info' },
-  ready: { label: '可取餐', bg: 'bg-status-done-bg', text: 'text-success' },
   completed: { label: '已完成', bg: 'bg-status-done-bg', text: 'text-success' },
   cancelled: { label: '已取消', bg: 'bg-[#FDECEA]', text: 'text-error' },
 };
