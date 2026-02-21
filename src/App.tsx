@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import MenuPage from './customer/pages/MenuPage';
 import CartPage from './customer/pages/CartPage';
 import OrderStatusPage from './customer/pages/OrderStatusPage';
@@ -13,6 +14,7 @@ import AnalyticsPage from './admin/pages/AnalyticsPage';
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <Routes>
         {/* 顧客端路由 */}
@@ -36,6 +38,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
