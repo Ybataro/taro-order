@@ -288,8 +288,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
-      console.log(`📊 載入訂單統計: 當前訂單 ${currentOrders.length} 筆, 歷史訂單 ${historyOrders.length} 筆, 總計 ${allOrders.length} 筆`);
-
       return allOrders;
     } catch (error) {
       console.error('Error fetching all orders:', error);
@@ -332,8 +330,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   // 交班歸零：將訂單歸檔到歷史表並重置桌位
   resetDaily: async () => {
     try {
-      console.log('🗃️ 開始歸檔訂單...');
-      
       // 呼叫 Supabase 函數來歸檔訂單
       const { error: archiveError } = await supabase.rpc('archive_orders');
 
@@ -341,8 +337,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         console.error('❌ 歸檔訂單失敗:', archiveError);
         throw archiveError;
       }
-
-      console.log('✅ 訂單已歸檔到歷史表');
 
       // 重置所有桌位為可用
       const { error: updateError } = await supabase
@@ -355,8 +349,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         throw updateError;
       }
 
-      console.log('✅ 桌位已重置');
-
       // 更新交班時間為今天的日期（YYYY-MM-DD，台灣時區）
       const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
       const { error: settingError } = await supabase
@@ -366,8 +358,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       if (settingError) {
         console.error('❌ 更新交班時間失敗:', settingError);
-      } else {
-        console.log('✅ 交班時間已更新為今天:', todayTW);
       }
 
       // 重新載入今天 00:00（台灣時區）之後的訂單
@@ -375,7 +365,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       await get().fetchOrders(todayStartTW);
       await get().fetchTables();
 
-      console.log('✅ 交班歸零成功，歷史資料已保存');
     } catch (error) {
       console.error('❌ 交班歸零失敗:', error);
       throw error;

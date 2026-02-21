@@ -58,7 +58,6 @@ export const useSystemStore = create<SystemState>((set, get) => ({
       if (error) throw error;
 
       set({ lastShiftResetTime: resetTime });
-      console.log('✅ 交班時間已更新:', resetTime);
     } catch (error) {
       console.error('更新交班時間失敗:', error);
     }
@@ -91,7 +90,6 @@ export const useSystemStore = create<SystemState>((set, get) => ({
 
       // 如果最後交班日期不是今天，表示過了 00:00，需要自動交班
       if (lastResetDate < todayTW) {
-        console.log('🔄 檢測到跨日，執行自動交班歸零...');
         return true;
       }
 

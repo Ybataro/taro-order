@@ -45,7 +45,6 @@ export default function OrdersPage() {
     try {
       const needAutoReset = await checkAutoShiftReset();
       if (needAutoReset) {
-        console.log('🔄 偵測到跨日，自動執行交班歸零...');
         await resetDaily();
         // 刷新 systemStore 快取，避免 30 秒後重複觸發
         await useSystemStore.getState().fetchLastShiftResetTime();

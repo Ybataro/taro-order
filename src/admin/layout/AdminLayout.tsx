@@ -16,10 +16,6 @@ export default function AdminLayout() {
   const orders = useOrderStore((s) => s.orders);
   const fetchMenuItems = useMenuStore((s) => s.fetchMenuItems);
   
-  // 除錯：監聽 orders 變化
-  useEffect(() => {
-    console.log('🔍 AdminLayout: orders 狀態已更新，數量:', orders.length);
-  }, [orders]);
   const pendingCount = orders.filter((o) => o.status === 'pending').length;
   const knownOrderIdsRef = useRef(new Set<string>());
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -29,12 +25,9 @@ export default function AdminLayout() {
     if (!audioContextRef.current) {
       try {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        console.log('🎵 AudioContext 已初始化，狀態:', audioContextRef.current.state);
-        
         // 立即嘗試恢復（需要在用戶手勢中）
         if (audioContextRef.current.state === 'suspended') {
           await audioContextRef.current.resume();
-          console.log('🎵 AudioContext 已恢復');
         }
       } catch (error) {
         console.error('AudioContext 初始化失敗:', error);
@@ -43,7 +36,6 @@ export default function AdminLayout() {
       // 如果已存在但被暫停，嘗試恢復
       try {
         await audioContextRef.current.resume();
-        console.log('🎵 AudioContext 已恢復');
       } catch (error) {
         console.error('AudioContext 恢復失敗:', error);
       }
@@ -57,7 +49,6 @@ export default function AdminLayout() {
 
       // AudioContext 尚未由用戶互動初始化，跳過播放
       if (!audioContext || audioContext.state !== 'running') {
-        console.warn('⚠️ AudioContext 尚未就緒，跳過播放 (state:', audioContext?.state, ')');
         return;
       }
       
@@ -79,7 +70,6 @@ export default function AdminLayout() {
           oscillator.start(audioContext.currentTime + delay);
           oscillator.stop(audioContext.currentTime + delay + 0.2);
         });
-        console.log('🔔 新訂單提示音已播放 (AudioContext state:', audioContext.state + ')');
       } else {
         // 取消訂單：一次下降音（咚）
         const oscillator = audioContext.createOscillator();
@@ -97,7 +87,6 @@ export default function AdminLayout() {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
         
-        console.log('❌ 取消訂單提示音已播放 (AudioContext state:', audioContext.state + ')');
       }
     } catch (error) {
       console.error('播放提示音失敗:', error);
@@ -106,8 +95,6 @@ export default function AdminLayout() {
 
   // 全局 Realtime 訂閱 + 用戶互動監聽
   useEffect(() => {
-    console.log('🌐 AdminLayout: 建立全局 Realtime 訂閱');
-    
     // 載入菜單資料
     fetchMenuItems();
     
@@ -116,7 +103,6 @@ export default function AdminLayout() {
     
     // 監聽用戶互動，初始化並恢復 AudioContext
     const handleUserInteraction = async () => {
-      console.log('👆 偵測到用戶互動，初始化/恢復 AudioContext');
       await initAudioContext();
     };
     
@@ -130,10 +116,8 @@ export default function AdminLayout() {
     const keepAliveInterval = setInterval(async () => {
       const ctx = audioContextRef.current;
       if (ctx && ctx.state === 'suspended') {
-        console.log('🔄 定期檢查：AudioContext 被暫停，嘗試恢復...');
         try {
           await ctx.resume();
-          console.log('✅ AudioContext 已恢復');
         } catch (error) {
           console.error('❌ AudioContext 恢復失敗:', error);
         }
@@ -141,7 +125,6 @@ export default function AdminLayout() {
     }, 30000); // 每 30 秒檢查一次
     
     return () => {
-      console.log('🌐 AdminLayout: 清理全局 Realtime 訂閱');
       unsubscribe();
       events.forEach(event => {
         document.removeEventListener(event, handleUserInteraction);
@@ -171,16 +154,12 @@ export default function AdminLayout() {
     // 只在已完成初始化後才播放音效（避免首次載入時誤判全部為新訂單）
     if (previousOrderIds.size > 0) {
       if (newOrderIds.length > 0) {
-        console.log('🆕 發現新訂單:', newOrderIds);
         playNotificationSound('new');
       }
 
       if (newCancelledIds.length > 0) {
-        console.log('❌ 訂單已取消:', newCancelledIds);
         playNotificationSound('cancel');
       }
-    } else {
-      console.log('📋 初始化訂單追蹤，當前訂單數:', orders.length);
     }
     knownOrderIdsRef.current = currentAllOrderIds;
   }, [orders]);

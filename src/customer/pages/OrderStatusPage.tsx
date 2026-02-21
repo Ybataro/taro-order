@@ -78,7 +78,6 @@ export default function OrderStatusPage() {
           filter: `id=eq.${orderId}`,
         },
         (payload) => {
-          console.log('訂單更新:', payload);
           if (payload.eventType === 'UPDATE' && mounted) {
             setOrder(payload.new as Order);
           } else if (payload.eventType === 'DELETE' && mounted) {
@@ -87,9 +86,7 @@ export default function OrderStatusPage() {
         }
       )
       .subscribe((status, err) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ 訂單狀態訂閱成功');
-        } else if (status === 'CHANNEL_ERROR') {
+        if (status === 'CHANNEL_ERROR') {
           console.error('❌ 訂單狀態訂閱失敗:', err);
         }
       });

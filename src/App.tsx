@@ -4,6 +4,7 @@ import CartPage from './customer/pages/CartPage';
 import OrderStatusPage from './customer/pages/OrderStatusPage';
 import ThankYouPage from './customer/pages/ThankYouPage';
 import AdminLayout from './admin/layout/AdminLayout';
+import AdminAuth from './admin/components/AdminAuth';
 import OrdersPage from './admin/pages/OrdersPage';
 import MenuManagePage from './admin/pages/MenuManagePage';
 import TablesPage from './admin/pages/TablesPage';
@@ -21,7 +22,7 @@ export default function App() {
         <Route path="/status/:orderId" element={<OrderStatusPage />} />
 
         {/* 店家後台路由 */}
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin" element={<AdminAuth><AdminLayout /></AdminAuth>}>
           <Route index element={<Navigate to="/admin/orders" replace />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
