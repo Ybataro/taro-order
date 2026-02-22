@@ -99,6 +99,7 @@ export default function MenuManagePage() {
     setShowForm(true);
   };
 
+  const [comboSelectId, setComboSelectId] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
 
@@ -603,40 +604,58 @@ export default function MenuManagePage() {
                     <label className="block text-sm font-semibold text-text-secondary">套餐內容</label>
 
                     {/* 已選品項 */}
-                    {formData.comboItems.map((ci, idx) => (
-                      <div key={idx} className="flex items-center gap-2 bg-bg rounded-[8px] px-3 py-2">
-                        <span className="flex-1 text-sm text-text-primary">{ci.name}</span>
-                        <input
-                          type="number"
-                          value={ci.quantity}
-                          onChange={(e) => updateComboQty(idx, Number(e.target.value))}
-                          className="w-16 h-8 px-2 border border-border rounded-[6px] text-sm text-center"
-                          min={1}
-                        />
-                        <button
-                          onClick={() => removeComboItem(idx)}
-                          className="p-1 text-error hover:bg-error/10 rounded cursor-pointer"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
+                    {formData.comboItems.length > 0 ? (
+                      formData.comboItems.map((ci, idx) => (
+                        <div key={idx} className="flex items-center gap-2 border border-border rounded-[8px] px-3 py-2">
+                          <span className="flex-1 text-sm font-semibold text-text-primary">{ci.name}</span>
+                          <span className="text-xs text-text-hint mr-1">數量</span>
+                          <input
+                            type="number"
+                            value={ci.quantity}
+                            onChange={(e) => updateComboQty(idx, Number(e.target.value))}
+                            className="w-16 h-8 px-2 border border-border rounded-[6px] text-sm text-center"
+                            min={1}
+                          />
+                          <button
+                            onClick={() => removeComboItem(idx)}
+                            className="p-1 text-error hover:bg-error/10 rounded cursor-pointer"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-text-hint">尚未加入品項</p>
+                    )}
 
-                    {/* 選擇品項下拉 */}
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        if (e.target.value) addComboItem(e.target.value);
-                      }}
-                      className="w-full h-10 px-4 border border-border rounded-[8px] bg-card text-sm focus:outline-none focus:border-primary"
-                    >
-                      <option value="">+ 新增品項到套餐...</option>
-                      {menuItems
-                        .filter((m) => !m.isCombo && m.id !== editingItem?.id)
-                        .map((m) => (
-                          <option key={m.id} value={m.id}>{m.name} (${m.price})</option>
-                        ))}
-                    </select>
+                    {/* 選擇品項 + 加入按鈕 */}
+                    <div className="flex gap-2">
+                      <select
+                        value={comboSelectId}
+                        onChange={(e) => setComboSelectId(e.target.value)}
+                        className="flex-1 h-10 px-4 border border-border rounded-[8px] bg-card text-sm focus:outline-none focus:border-primary"
+                      >
+                        <option value="">選擇品項...</option>
+                        {menuItems
+                          .filter((m) => !m.isCombo && m.id !== editingItem?.id)
+                          .map((m) => (
+                            <option key={m.id} value={m.id}>{m.name} (${m.price})</option>
+                          ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (comboSelectId) {
+                            addComboItem(comboSelectId);
+                            setComboSelectId('');
+                          }
+                        }}
+                        disabled={!comboSelectId}
+                        className="h-10 px-4 bg-primary text-white rounded-[8px] text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark cursor-pointer"
+                      >
+                        加入
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

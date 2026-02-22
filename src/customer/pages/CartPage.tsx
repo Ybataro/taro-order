@@ -9,6 +9,13 @@ import { useState } from 'react';
 
 function formatCustomization(item: import('../../types').CartItem): string {
   const parts: string[] = [];
+  // 套餐內容
+  if (item.menuItem.isCombo && item.menuItem.comboItems && item.menuItem.comboItems.length > 0) {
+    const comboText = item.menuItem.comboItems
+      .map((ci) => ci.quantity > 1 ? `${ci.name} x${ci.quantity}` : ci.name)
+      .join('＋');
+    parts.push(`套餐：${comboText}`);
+  }
   if (item.customization.temperature) parts.push(`溫度：${item.customization.temperature}`);
   for (const a of item.customization.addons) {
     parts.push(`加購 ${a.addon.name} x${a.quantity}`);
@@ -106,6 +113,18 @@ export default function CartPage() {
                         <Trash2 size={18} />
                       </button>
                     </div>
+
+                    {/* 套餐內容標籤 */}
+                    {cartItem.menuItem.isCombo && cartItem.menuItem.comboItems && cartItem.menuItem.comboItems.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        <span className="text-xs bg-primary/15 text-primary px-2 py-0.5 rounded-full font-semibold">{t('menu.combo')}</span>
+                        {cartItem.menuItem.comboItems.map((ci) => (
+                          <span key={ci.menuItemId} className="text-xs bg-secondary text-text-secondary px-2 py-0.5 rounded-full">
+                            {ci.name}{ci.quantity > 1 ? ` x${ci.quantity}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {/* 客製化標籤 */}
                     {(cartItem.customization.temperature || cartItem.customization.addons.length > 0) && (
