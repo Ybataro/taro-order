@@ -22,7 +22,7 @@ const tagStyle = (tag: string): string => {
 export default function MenuCard({ item }: MenuCardProps) {
   const [showModal, setShowModal] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
-  const { t, tMenu } = useTranslation();
+  const { t, tMenu, localized } = useTranslation();
 
   return (
     <>
@@ -41,7 +41,7 @@ export default function MenuCard({ item }: MenuCardProps) {
 
         {/* 品項資訊 */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-text-primary truncate">{tMenu('item', item.name)}</h3>
+          <h3 className="text-lg font-semibold text-text-primary truncate">{localized(item.name, item.nameEn, item.nameJa) || tMenu('item', item.name)}</h3>
           {item.tags && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
               {item.tags.map(tag => (
@@ -51,7 +51,7 @@ export default function MenuCard({ item }: MenuCardProps) {
               ))}
             </div>
           )}
-          <p className="text-sm text-text-hint mt-1 line-clamp-1">{tMenu('desc', item.name)}</p>
+          <p className="text-sm text-text-hint mt-1 line-clamp-1">{localized(item.description, item.descriptionEn, item.descriptionJa) || tMenu('desc', item.name)}</p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-xl font-semibold text-primary font-['Poppins']">
               NT$ {item.price}

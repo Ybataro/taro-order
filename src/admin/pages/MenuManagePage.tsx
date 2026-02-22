@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { Plus, Pencil, Eye, EyeOff, Trash2, X, Upload } from 'lucide-react';
+import { Plus, Pencil, Eye, EyeOff, Trash2, X, Upload, ChevronDown, ChevronUp } from 'lucide-react';
 import { useMenuStore } from '../../stores/menuStore';
 import type { MenuItem } from '../../types';
 import Button from '../../components/ui/Button';
@@ -31,7 +31,12 @@ export default function MenuManagePage() {
     subcategoryId: '',
     image: '',
     tags: [] as string[],
+    nameEn: '',
+    nameJa: '',
+    descriptionEn: '',
+    descriptionJa: '',
   });
+  const [showI18n, setShowI18n] = useState(false);
 
   const filteredItems = filterCategoryId === 'all'
     ? menuItems
@@ -55,7 +60,12 @@ export default function MenuManagePage() {
       subcategoryId: categories[0]?.subcategories[0]?.id || '',
       image: '',
       tags: [],
+      nameEn: '',
+      nameJa: '',
+      descriptionEn: '',
+      descriptionJa: '',
     });
+    setShowI18n(false);
     setShowForm(true);
   };
 
@@ -69,7 +79,12 @@ export default function MenuManagePage() {
       subcategoryId: item.subcategoryId,
       image: item.image,
       tags: item.tags || [],
+      nameEn: item.nameEn || '',
+      nameJa: item.nameJa || '',
+      descriptionEn: item.descriptionEn || '',
+      descriptionJa: item.descriptionJa || '',
     });
+    setShowI18n(!!(item.nameEn || item.nameJa || item.descriptionEn || item.descriptionJa));
     setShowForm(true);
   };
 
@@ -288,6 +303,62 @@ export default function MenuManagePage() {
                   className="w-full h-20 p-4 border border-border rounded-[8px] bg-card text-base resize-none focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   placeholder="輸入品項描述"
                 />
+              </div>
+
+              {/* 翻譯區塊 */}
+              <div className="border border-border rounded-[8px] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowI18n(!showI18n)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 hover:bg-secondary text-sm font-semibold text-text-secondary cursor-pointer"
+                >
+                  <span>🌐 翻譯（English / 日本語）</span>
+                  {showI18n ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                {showI18n && (
+                  <div className="p-4 flex flex-col gap-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-text-secondary mb-1">English Name / 英文品名</label>
+                      <input
+                        type="text"
+                        value={formData.nameEn}
+                        onChange={(e) => setFormData((p) => ({ ...p, nameEn: e.target.value }))}
+                        className="w-full h-10 px-4 border border-border rounded-[8px] bg-card text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        placeholder="e.g. Signature Taro Shaved Ice"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-text-secondary mb-1">日本語名 / 日文品名</label>
+                      <input
+                        type="text"
+                        value={formData.nameJa}
+                        onChange={(e) => setFormData((p) => ({ ...p, nameJa: e.target.value }))}
+                        className="w-full h-10 px-4 border border-border rounded-[8px] bg-card text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        placeholder="例：看板タロイモかき氷"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-text-secondary mb-1">English Description / 英文描述</label>
+                      <input
+                        type="text"
+                        value={formData.descriptionEn}
+                        onChange={(e) => setFormData((p) => ({ ...p, descriptionEn: e.target.value }))}
+                        className="w-full h-10 px-4 border border-border rounded-[8px] bg-card text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        placeholder="e.g. Taro balls, mochi, tapioca"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-text-secondary mb-1">日本語説明 / 日文描述</label>
+                      <input
+                        type="text"
+                        value={formData.descriptionJa}
+                        onChange={(e) => setFormData((p) => ({ ...p, descriptionJa: e.target.value }))}
+                        className="w-full h-10 px-4 border border-border rounded-[8px] bg-card text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        placeholder="例：タロボール、白玉、タピオカ"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 價格 */}

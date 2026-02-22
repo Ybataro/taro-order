@@ -18,7 +18,7 @@ function formatCustomization(item: import('../../types').CartItem): string {
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { t, tMenu } = useTranslation();
+  const { t, tMenu, localized } = useTranslation();
   const { items, tableNumber, note, paymentMethod, updateQuantity, removeItem, setNote, setPaymentMethod, clearCart } = useCartStore();
   const addOrder = useOrderStore((s) => s.addOrder);
   const generateDailyOrderNumber = useOrderStore((s) => s.generateDailyOrderNumber);
@@ -101,7 +101,7 @@ export default function CartPage() {
                 return (
                   <div key={cartItem.cartItemId} className="bg-card rounded-[12px] shadow-[var(--shadow-card)] p-4">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-base font-semibold text-text-primary">{tMenu('item', cartItem.menuItem.name)}</h3>
+                      <h3 className="text-base font-semibold text-text-primary">{localized(cartItem.menuItem.name, cartItem.menuItem.nameEn, cartItem.menuItem.nameJa) || tMenu('item', cartItem.menuItem.name)}</h3>
                       <button onClick={() => removeItem(cartItem.cartItemId)} className="p-1 text-text-hint hover:text-error cursor-pointer" aria-label={t('cart.delete')}>
                         <Trash2 size={18} />
                       </button>
@@ -115,7 +115,7 @@ export default function CartPage() {
                         )}
                         {cartItem.customization.addons.map((a) => (
                           <span key={a.addon.id} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                            +{tMenu('addon', a.addon.name)} x{a.quantity}
+                            +{localized(a.addon.name, a.addon.nameEn, a.addon.nameJa) || tMenu('addon', a.addon.name)} x{a.quantity}
                           </span>
                         ))}
                       </div>

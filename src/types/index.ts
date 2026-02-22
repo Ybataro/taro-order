@@ -2,6 +2,8 @@
 export interface Category {
   id: string;
   name: string;
+  nameEn?: string | null;
+  nameJa?: string | null;
   subcategories: Subcategory[];
   sortOrder: number;
 }
@@ -9,6 +11,8 @@ export interface Category {
 export interface Subcategory {
   id: string;
   name: string;
+  nameEn?: string | null;
+  nameJa?: string | null;
   categoryId: string;
   sortOrder: number;
 }
@@ -17,7 +21,11 @@ export interface Subcategory {
 export interface MenuItem {
   id: string;
   name: string;
+  nameEn?: string | null;
+  nameJa?: string | null;
   description: string;
+  descriptionEn?: string | null;
+  descriptionJa?: string | null;
   price: number;
   image: string;
   categoryId: string;
@@ -30,6 +38,8 @@ export interface MenuItem {
 export interface Addon {
   id: string;
   name: string;
+  nameEn?: string | null;
+  nameJa?: string | null;
   price: number;
 }
 

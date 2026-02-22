@@ -56,12 +56,16 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       const categories: Category[] = (categoriesData || []).map((cat) => ({
         id: cat.id,
         name: cat.name,
+        nameEn: cat.name_en ?? null,
+        nameJa: cat.name_ja ?? null,
         sortOrder: cat.sort_order,
         subcategories: (subcategoriesData || [])
           .filter((sub) => sub.category_id === cat.id)
           .map((sub) => ({
             id: sub.id,
             name: sub.name,
+            nameEn: sub.name_en ?? null,
+            nameJa: sub.name_ja ?? null,
             categoryId: sub.category_id,
             sortOrder: sub.sort_order,
           })),
@@ -91,7 +95,11 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       const menuItems: MenuItem[] = (data || []).map((item) => ({
         id: item.id,
         name: item.name,
+        nameEn: item.name_en ?? null,
+        nameJa: item.name_ja ?? null,
         description: item.description || '',
+        descriptionEn: item.description_en ?? null,
+        descriptionJa: item.description_ja ?? null,
         price: item.price,
         image: item.image || '',
         categoryId: item.category_id,
@@ -122,6 +130,8 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       const addons: Addon[] = (data || []).map((addon) => ({
         id: addon.id,
         name: addon.name,
+        nameEn: addon.name_en ?? null,
+        nameJa: addon.name_ja ?? null,
         price: addon.price,
       }));
 
@@ -141,7 +151,11 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         .insert([{
           id: `m${Date.now()}`,
           name: item.name,
+          name_en: item.nameEn || null,
+          name_ja: item.nameJa || null,
           description: item.description,
+          description_en: item.descriptionEn || null,
+          description_ja: item.descriptionJa || null,
           price: item.price,
           image: item.image || '',
           category_id: item.categoryId,
@@ -169,7 +183,11 @@ export const useMenuStore = create<MenuState>((set, get) => ({
     try {
       const dbUpdates: any = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.nameEn !== undefined) dbUpdates.name_en = updates.nameEn || null;
+      if (updates.nameJa !== undefined) dbUpdates.name_ja = updates.nameJa || null;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.descriptionEn !== undefined) dbUpdates.description_en = updates.descriptionEn || null;
+      if (updates.descriptionJa !== undefined) dbUpdates.description_ja = updates.descriptionJa || null;
       if (updates.price !== undefined) dbUpdates.price = updates.price;
       if (updates.image !== undefined) dbUpdates.image = updates.image;
       if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId;
