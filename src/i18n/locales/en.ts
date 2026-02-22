@@ -15,6 +15,10 @@ export const en: Record<string, string> = {
   'menu.confirmContinue': 'Would you like to continue ordering?',
   'menu.continueOrdering': 'Continue Ordering',
   'menu.add': 'Add',
+  'menu.soldOut': 'Sold Out',
+  'menu.stockRemaining': '{n} left',
+  'menu.combo': 'Combo',
+  'menu.comboContents': 'Combo includes',
 
   // Tags
   'tag.招牌': 'Signature',

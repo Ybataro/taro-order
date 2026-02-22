@@ -15,6 +15,10 @@ export const zhTW: Record<string, string> = {
   'menu.confirmContinue': '請確定是否繼續點餐',
   'menu.continueOrdering': '確定繼續點餐',
   'menu.add': '加入',
+  'menu.soldOut': '售罄',
+  'menu.stockRemaining': '剩 {n} 份',
+  'menu.combo': '套餐',
+  'menu.comboContents': '套餐內容',
 
   // 標籤顯示
   'tag.招牌': '招牌',

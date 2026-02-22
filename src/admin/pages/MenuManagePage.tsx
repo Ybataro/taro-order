@@ -1,23 +1,24 @@
-﻿import { useState, useEffect } from 'react';
-import { Plus, Pencil, Eye, EyeOff, Trash2, X, Upload, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Pencil, Eye, EyeOff, Trash2, X, Upload, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { useMenuStore } from '../../stores/menuStore';
-import type { MenuItem } from '../../types';
+import type { MenuItem, ComboItemEntry } from '../../types';
 import Button from '../../components/ui/Button';
 import { translateText } from '../../lib/translate';
 
 const AVAILABLE_TAGS = ['招牌', '熱銷', '新品', '季節限定'];
 
 export default function MenuManagePage() {
-  const { 
-    categories, 
-    menuItems, 
+  const {
+    categories,
+    menuItems,
     fetchCategories,
     fetchMenuItems,
     fetchAddons,
-    addMenuItem, 
-    updateMenuItem, 
-    toggleAvailability, 
-    deleteMenuItem 
+    addMenuItem,
+    updateMenuItem,
+    toggleAvailability,
+    deleteMenuItem,
+    setManualStock
   } = useMenuStore();
   const [filterCategoryId, setFilterCategoryId] = useState('all');
   const [showForm, setShowForm] = useState(false);
@@ -36,6 +37,9 @@ export default function MenuManagePage() {
     nameJa: '',
     descriptionEn: '',
     descriptionJa: '',
+    dailyLimit: null as number | null,
+    isCombo: false,
+    comboItems: [] as ComboItemEntry[],
   });
   const [showI18n, setShowI18n] = useState(false);
 
@@ -65,6 +69,9 @@ export default function MenuManagePage() {
       nameJa: '',
       descriptionEn: '',
       descriptionJa: '',
+      dailyLimit: null,
+      isCombo: false,
+      comboItems: [],
     });
     setShowI18n(false);
     setShowForm(true);
@@ -84,6 +91,9 @@ export default function MenuManagePage() {
       nameJa: item.nameJa || '',
       descriptionEn: item.descriptionEn || '',
       descriptionJa: item.descriptionJa || '',
+      dailyLimit: item.dailyLimit,
+      isCombo: item.isCombo,
+      comboItems: item.comboItems || [],
     });
     setShowI18n(!!(item.nameEn || item.nameJa || item.descriptionEn || item.descriptionJa));
     setShowForm(true);
@@ -123,13 +133,21 @@ export default function MenuManagePage() {
 
     try {
       setIsSaving(true);
+      const payload = {
+        ...formData,
+        comboItems: formData.isCombo && formData.comboItems.length > 0 ? formData.comboItems : null,
+      };
       if (editingItem) {
-        await updateMenuItem(editingItem.id, formData);
+        await updateMenuItem(editingItem.id, payload);
       } else {
         const newItem: MenuItem = {
           id: `m${Date.now()}`,
-          ...formData,
+          ...payload,
           isAvailable: true,
+          currentStock: payload.dailyLimit,
+          stockResetDate: payload.dailyLimit != null
+            ? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' })
+            : null,
         };
         await addMenuItem(newItem);
       }
@@ -153,17 +171,54 @@ export default function MenuManagePage() {
     }
   };
 
+  // 套餐：新增品項
+  const addComboItem = (menuItemId: string) => {
+    const existing = menuItems.find((m) => m.id === menuItemId);
+    if (!existing) return;
+    setFormData((p) => ({
+      ...p,
+      comboItems: [...p.comboItems, { menuItemId, name: existing.name, quantity: 1 }],
+    }));
+  };
+
+  // 套餐：移除品項
+  const removeComboItem = (index: number) => {
+    setFormData((p) => ({
+      ...p,
+      comboItems: p.comboItems.filter((_, i) => i !== index),
+    }));
+  };
+
+  // 套餐：更新數量
+  const updateComboQty = (index: number, qty: number) => {
+    if (qty < 1) return;
+    setFormData((p) => ({
+      ...p,
+      comboItems: p.comboItems.map((ci, i) => (i === index ? { ...ci, quantity: qty } : ci)),
+    }));
+  };
+
   const selectedCategory = categories.find((c) => c.id === formData.categoryId);
+
+  // 庫存重置按鈕
+  const handleResetStock = async (item: MenuItem) => {
+    if (item.dailyLimit == null) return;
+    try {
+      await setManualStock(item.id, item.dailyLimit);
+    } catch {
+      alert('庫存重置失敗');
+    }
+  };
 
   // 載入菜單資料並啟用即時訂閱
   useEffect(() => {
     fetchCategories();
     fetchMenuItems();
     fetchAddons();
-    
+
     // 啟用 Supabase 即時訂閱
     const unsubscribe = useMenuStore.getState().subscribeToMenu();
-    
+
     return unsubscribe;
   }, [fetchCategories, fetchMenuItems, fetchAddons]);
 
@@ -202,8 +257,8 @@ export default function MenuManagePage() {
               <th className="text-left p-4">圖片</th>
               <th className="text-left p-4">品名</th>
               <th className="text-left p-4">價格</th>
+              <th className="text-left p-4">庫存</th>
               <th className="text-left p-4">分類</th>
-              <th className="text-left p-4">子分類</th>
               <th className="text-center p-4">狀態</th>
               <th className="text-center p-4">操作</th>
             </tr>
@@ -221,7 +276,14 @@ export default function MenuManagePage() {
                   </div>
                 </td>
                 <td className="p-4">
-                  <span className="font-semibold text-text-primary">{item.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-text-primary">{item.name}</span>
+                    {item.isCombo && (
+                      <span className="inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary/15 text-primary">
+                        套餐
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-text-hint mt-0.5 truncate max-w-48">{item.description}</p>
                   {item.tags && item.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
@@ -236,8 +298,25 @@ export default function MenuManagePage() {
                 <td className="p-4 font-semibold font-['Poppins'] text-text-primary">
                   ${item.price}
                 </td>
+                <td className="p-4 text-sm">
+                  {item.dailyLimit != null ? (
+                    <div className="flex items-center gap-2">
+                      <span className={`font-semibold ${item.currentStock === 0 ? 'text-error' : 'text-text-primary'}`}>
+                        {item.currentStock ?? 0}/{item.dailyLimit}
+                      </span>
+                      <button
+                        onClick={() => handleResetStock(item)}
+                        className="p-1 text-info hover:bg-info/10 rounded cursor-pointer"
+                        title="重置庫存"
+                      >
+                        <RotateCcw size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-text-hint">不限量</span>
+                  )}
+                </td>
                 <td className="p-4 text-sm text-text-secondary">{getCategoryName(item.categoryId)}</td>
-                <td className="p-4 text-sm text-text-secondary">{getSubcategoryName(item.categoryId, item.subcategoryId)}</td>
                 <td className="p-4 text-center">
                   <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
                     item.isAvailable
@@ -420,6 +499,28 @@ export default function MenuManagePage() {
                 />
               </div>
 
+              {/* 每日限量 */}
+              <div>
+                <label className="block text-sm font-semibold text-text-secondary mb-2">每日限量</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={formData.dailyLimit ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData((p) => ({
+                        ...p,
+                        dailyLimit: val === '' ? null : Math.max(0, Number(val)),
+                      }));
+                    }}
+                    className="w-32 h-11 px-4 border border-border rounded-[8px] bg-card text-base focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    placeholder="不限量"
+                    min={0}
+                  />
+                  <span className="text-sm text-text-hint">留空 = 不限量</span>
+                </div>
+              </div>
+
               {/* 分類 */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -485,6 +586,61 @@ export default function MenuManagePage() {
                 </div>
               </div>
 
+              {/* 套餐設定 */}
+              <div className="border border-border rounded-[8px] p-4">
+                <label className="flex items-center gap-2 cursor-pointer mb-3">
+                  <input
+                    type="checkbox"
+                    checked={formData.isCombo}
+                    onChange={(e) => setFormData((p) => ({ ...p, isCombo: e.target.checked }))}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <span className="text-sm font-semibold text-text-secondary">此品項為套餐組合</span>
+                </label>
+
+                {formData.isCombo && (
+                  <div className="flex flex-col gap-3">
+                    <label className="block text-sm font-semibold text-text-secondary">套餐內容</label>
+
+                    {/* 已選品項 */}
+                    {formData.comboItems.map((ci, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-bg rounded-[8px] px-3 py-2">
+                        <span className="flex-1 text-sm text-text-primary">{ci.name}</span>
+                        <input
+                          type="number"
+                          value={ci.quantity}
+                          onChange={(e) => updateComboQty(idx, Number(e.target.value))}
+                          className="w-16 h-8 px-2 border border-border rounded-[6px] text-sm text-center"
+                          min={1}
+                        />
+                        <button
+                          onClick={() => removeComboItem(idx)}
+                          className="p-1 text-error hover:bg-error/10 rounded cursor-pointer"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* 選擇品項下拉 */}
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) addComboItem(e.target.value);
+                      }}
+                      className="w-full h-10 px-4 border border-border rounded-[8px] bg-card text-sm focus:outline-none focus:border-primary"
+                    >
+                      <option value="">+ 新增品項到套餐...</option>
+                      {menuItems
+                        .filter((m) => !m.isCombo && m.id !== editingItem?.id)
+                        .map((m) => (
+                          <option key={m.id} value={m.id}>{m.name} (${m.price})</option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               {/* 操作按鈕 */}
               <div className="flex gap-3 mt-2">
                 <Button variant="secondary" fullWidth onClick={() => setShowForm(false)} disabled={isSaving}>
@@ -501,4 +657,3 @@ export default function MenuManagePage() {
     </div>
   );
 }
-

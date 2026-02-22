@@ -15,6 +15,10 @@ export const ja: Record<string, string> = {
   'menu.confirmContinue': '注文を続けますか？',
   'menu.continueOrdering': '注文を続ける',
   'menu.add': '追加',
+  'menu.soldOut': '売り切れ',
+  'menu.stockRemaining': '残り {n} 個',
+  'menu.combo': 'セット',
+  'menu.comboContents': 'セット内容',
 
   // タグ
   'tag.招牌': 'おすすめ',

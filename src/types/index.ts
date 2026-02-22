@@ -32,6 +32,19 @@ export interface MenuItem {
   subcategoryId: string;
   isAvailable: boolean;
   tags?: string[];
+  // 庫存管理
+  dailyLimit: number | null;
+  currentStock: number | null;
+  stockResetDate: string | null;
+  // 套餐組合
+  isCombo: boolean;
+  comboItems: ComboItemEntry[] | null;
+}
+
+export interface ComboItemEntry {
+  menuItemId: string;
+  name: string;
+  quantity: number;
 }
 
 // 加購品項

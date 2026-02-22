@@ -19,7 +19,8 @@ export default function MenuPage() {
     menuItems,
     fetchCategories,
     fetchMenuItems,
-    fetchAddons
+    fetchAddons,
+    resetStaleStocks
   } = useMenuStore();
   const setTableNumber = useCartStore((s) => s.setTableNumber);
   const tables = useOrderStore((s) => s.tables);
@@ -49,14 +50,14 @@ export default function MenuPage() {
   // 載入菜單資料並啟用即時訂閱
   useEffect(() => {
     fetchCategories();
-    fetchMenuItems();
+    fetchMenuItems().then(() => resetStaleStocks());
     fetchAddons();
 
     // 啟用菜單即時訂閱
     const unsubscribe = useMenuStore.getState().subscribeToMenu();
 
     return unsubscribe;
-  }, [fetchCategories, fetchMenuItems, fetchAddons]);
+  }, [fetchCategories, fetchMenuItems, fetchAddons, resetStaleStocks]);
 
   useEffect(() => {
     if (tableNumber >= 5 && tableNumber <= 22) {
@@ -65,8 +66,11 @@ export default function MenuPage() {
   }, [tableNumber, setTableNumber]);
 
   const activeCategory = categories.find((c) => c.id === activeCategoryId);
+  // 顯示上架品項 + 售罄品項（庫存歸零但非手動下架）
   const availableItems = menuItems.filter(
-    (item) => item.categoryId === activeCategoryId && item.isAvailable
+    (item) =>
+      item.categoryId === activeCategoryId &&
+      (item.isAvailable || (item.currentStock === 0 && item.dailyLimit != null))
   );
 
   // 按子分類分組

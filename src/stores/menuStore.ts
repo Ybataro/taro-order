@@ -18,7 +18,11 @@ interface MenuState {
   updateMenuItem: (id: string, updates: Partial<MenuItem>) => Promise<void>;
   toggleAvailability: (id: string) => Promise<void>;
   deleteMenuItem: (id: string) => Promise<void>;
-  
+
+  // 庫存管理
+  resetStaleStocks: () => Promise<void>;
+  setManualStock: (id: string, qty: number) => Promise<void>;
+
   // 即時訂閱
   subscribeToMenu: () => () => void;
 }
@@ -106,6 +110,11 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         subcategoryId: item.subcategory_id || undefined,
         isAvailable: item.is_available,
         tags: item.tags || [],
+        dailyLimit: item.daily_limit ?? null,
+        currentStock: item.current_stock ?? null,
+        stockResetDate: item.stock_reset_date ?? null,
+        isCombo: item.is_combo ?? false,
+        comboItems: item.combo_items ?? null,
       }));
 
       set({ menuItems, isLoading: false });
@@ -162,6 +171,13 @@ export const useMenuStore = create<MenuState>((set, get) => ({
           subcategory_id: item.subcategoryId,
           is_available: item.isAvailable,
           tags: item.tags || [],
+          daily_limit: item.dailyLimit ?? null,
+          current_stock: item.dailyLimit ?? null,
+          stock_reset_date: item.dailyLimit != null
+            ? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' })
+            : null,
+          is_combo: item.isCombo ?? false,
+          combo_items: item.comboItems ?? null,
         }])
         .select()
         .single();
@@ -194,6 +210,15 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId;
       if (updates.isAvailable !== undefined) dbUpdates.is_available = updates.isAvailable;
       if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
+      if (updates.dailyLimit !== undefined) {
+        dbUpdates.daily_limit = updates.dailyLimit;
+        dbUpdates.current_stock = updates.dailyLimit;
+        dbUpdates.stock_reset_date = updates.dailyLimit != null
+          ? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' })
+          : null;
+      }
+      if (updates.isCombo !== undefined) dbUpdates.is_combo = updates.isCombo;
+      if (updates.comboItems !== undefined) dbUpdates.combo_items = updates.comboItems;
 
       const { error } = await supabase
         .from('menu_items')
@@ -249,6 +274,63 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       await get().fetchMenuItems();
     } catch (error) {
       console.error('刪除菜單品項失敗:', error);
+      throw error;
+    }
+  },
+
+  // ============================================
+  // 每日庫存重置（首位使用者觸發）
+  // ============================================
+  resetStaleStocks: async () => {
+    try {
+      const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+
+      // 找出有設定限量、但 reset_date 不是今天的品項
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('id, daily_limit')
+        .not('daily_limit', 'is', null)
+        .neq('stock_reset_date', todayTW);
+
+      if (error) throw error;
+      if (!data || data.length === 0) return;
+
+      // 批次更新：重置庫存 + 重新上架
+      for (const item of data) {
+        await supabase
+          .from('menu_items')
+          .update({
+            current_stock: item.daily_limit,
+            stock_reset_date: todayTW,
+            is_available: true,
+          })
+          .eq('id', item.id);
+      }
+
+      // 重新載入
+      await get().fetchMenuItems();
+    } catch (error) {
+      console.error('庫存重置失敗:', error);
+    }
+  },
+
+  // ============================================
+  // Admin 手動覆蓋庫存
+  // ============================================
+  setManualStock: async (id, qty) => {
+    try {
+      const updates: any = { current_stock: qty };
+      if (qty > 0) updates.is_available = true;
+
+      const { error } = await supabase
+        .from('menu_items')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+      await get().fetchMenuItems();
+    } catch (error) {
+      console.error('手動設定庫存失敗:', error);
       throw error;
     }
   },

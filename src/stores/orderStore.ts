@@ -92,6 +92,18 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       if (error) throw error;
 
+      // 扣庫存（fire-and-forget，不阻塞訂單流程）
+      if (order.items && order.items.length > 0) {
+        Promise.allSettled(
+          order.items.map((item) =>
+            supabase.rpc('decrement_stock', {
+              p_item_id: item.menuItemId,
+              p_qty: item.quantity,
+            })
+          )
+        ).catch((err) => console.error('扣庫存失敗:', err));
+      }
+
       // 更新桌位狀態
       await get().occupyTable(order.table_number);
 
