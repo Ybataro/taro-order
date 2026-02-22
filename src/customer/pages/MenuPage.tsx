@@ -140,7 +140,7 @@ export default function MenuPage() {
                 <section key={subcategory.id} className="mb-6">
                   <h2 className="text-lg font-bold text-text-primary mb-3 flex items-center gap-2 font-serif">
                     <span className="w-1 h-5 bg-primary rounded-full" />
-                    {localized(subcategory.name, subcategory.nameEn, subcategory.nameJa)}
+                    {localized(subcategory.name, subcategory.nameEn, subcategory.nameJa) || tMenu('sub', subcategory.name)}
                   </h2>
                   <div className="flex flex-col gap-3">
                     {items.map((item) => (

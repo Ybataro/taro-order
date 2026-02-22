@@ -27,10 +27,10 @@ export function useTranslation() {
     const result = translate(locale, key);
     return result === key ? name : result;
   };
-  // DB 翻譯 helper：優先用 DB 欄位，再 fallback 回靜態翻譯或中文
+  // DB 翻譯 helper：優先用 DB 欄位，EN/JA 無值時回傳 null 讓 tMenu fallback 生效
   const localized = (zhName: string, enName?: string | null, jaName?: string | null) => {
-    if (locale === 'en' && enName) return enName;
-    if (locale === 'ja' && jaName) return jaName;
+    if (locale === 'en') return enName || null;
+    if (locale === 'ja') return jaName || null;
     return zhName;
   };
   return { t, tMenu, localized, locale };

@@ -8,7 +8,7 @@ interface CategoryTabsProps {
 }
 
 export default function CategoryTabs({ categories, activeId, onSelect }: CategoryTabsProps) {
-  const { localized } = useTranslation();
+  const { tMenu, localized } = useTranslation();
 
   return (
     <div className="flex gap-1 overflow-x-auto no-scrollbar bg-dark-brown shadow-[var(--shadow-card)] sticky top-[56px] z-10">
@@ -22,7 +22,7 @@ export default function CategoryTabs({ categories, activeId, onSelect }: Categor
               : 'text-text-hint border-b-[3px] border-transparent hover:text-primary-light'
           }`}
         >
-          {localized(cat.name, cat.nameEn, cat.nameJa)}
+          {localized(cat.name, cat.nameEn, cat.nameJa) || tMenu('cat', cat.name)}
         </button>
       ))}
     </div>
