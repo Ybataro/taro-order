@@ -88,20 +88,30 @@ export default function MenuManagePage() {
     setShowForm(true);
   };
 
-  const handleSubmit = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async () => {
     if (!formData.name || formData.price <= 0) return;
 
-    if (editingItem) {
-      updateMenuItem(editingItem.id, formData);
-    } else {
-      const newItem: MenuItem = {
-        id: `m${Date.now()}`,
-        ...formData,
-        isAvailable: true,
-      };
-      addMenuItem(newItem);
+    try {
+      setIsSaving(true);
+      if (editingItem) {
+        await updateMenuItem(editingItem.id, formData);
+      } else {
+        const newItem: MenuItem = {
+          id: `m${Date.now()}`,
+          ...formData,
+          isAvailable: true,
+        };
+        await addMenuItem(newItem);
+      }
+      setShowForm(false);
+    } catch (error) {
+      console.error('儲存失敗:', error);
+      alert('儲存失敗：' + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setIsSaving(false);
     }
-    setShowForm(false);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -440,11 +450,11 @@ export default function MenuManagePage() {
 
               {/* 操作按鈕 */}
               <div className="flex gap-3 mt-2">
-                <Button variant="secondary" fullWidth onClick={() => setShowForm(false)}>
+                <Button variant="secondary" fullWidth onClick={() => setShowForm(false)} disabled={isSaving}>
                   取消
                 </Button>
-                <Button fullWidth onClick={handleSubmit}>
-                  {editingItem ? '儲存修改' : '新增品項'}
+                <Button fullWidth onClick={handleSubmit} disabled={isSaving}>
+                  {isSaving ? '儲存中...' : (editingItem ? '儲存修改' : '新增品項')}
                 </Button>
               </div>
             </div>
