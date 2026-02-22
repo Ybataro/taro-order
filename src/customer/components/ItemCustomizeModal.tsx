@@ -14,7 +14,7 @@ interface Props {
 
 export default function ItemCustomizeModal({ item, onClose }: Props) {
   const addItemWithCustomization = useCartStore((s) => s.addItemWithCustomization);
-  const { t } = useTranslation();
+  const { t, tMenu } = useTranslation();
 
   const allowAddons = !noAddonCategories.includes(item.categoryId);
   const temperatureOptions = getTemperatureOptions(item.categoryId);
@@ -57,7 +57,7 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
       <div className="bg-card rounded-t-[20px] sm:rounded-[20px] shadow-[var(--shadow-lg)] w-full max-w-md max-h-[85vh] overflow-y-auto">
         {/* 標題 */}
         <div className="sticky top-0 bg-card/95 backdrop-blur-sm p-4 border-b border-border flex items-center justify-between z-10 rounded-t-[20px]">
-          <h2 className="text-lg font-bold text-text-primary font-serif">{item.name}</h2>
+          <h2 className="text-lg font-bold text-text-primary font-serif">{tMenu('item', item.name)}</h2>
           <button onClick={onClose} className="p-1 text-text-hint hover:text-text-primary cursor-pointer">
             <X size={24} />
           </button>
@@ -77,7 +77,7 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
               )}
             </div>
             <div>
-              <p className="text-sm text-text-secondary leading-relaxed">{item.description}</p>
+              <p className="text-sm text-text-secondary leading-relaxed">{tMenu('desc', item.name)}</p>
               <p className="text-lg font-bold text-primary font-['Poppins'] mt-1">NT$ {item.price}</p>
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
                   return (
                     <div key={addon.id} className="flex items-center justify-between py-2.5 px-3.5 bg-bg rounded-[12px]">
                       <div>
-                        <span className="text-sm font-semibold text-text-primary">{addon.name}</span>
+                        <span className="text-sm font-semibold text-text-primary">{tMenu('addon', addon.name)}</span>
                         <span className="text-sm text-primary font-['Poppins'] ml-2 font-semibold">+${addon.price}</span>
                       </div>
                       <div className="flex items-center gap-2">

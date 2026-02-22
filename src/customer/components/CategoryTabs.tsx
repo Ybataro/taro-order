@@ -1,4 +1,5 @@
 import type { Category } from '../../types';
+import { useTranslation } from '../../stores/i18nStore';
 
 interface CategoryTabsProps {
   categories: Category[];
@@ -7,6 +8,8 @@ interface CategoryTabsProps {
 }
 
 export default function CategoryTabs({ categories, activeId, onSelect }: CategoryTabsProps) {
+  const { tMenu } = useTranslation();
+
   return (
     <div className="flex gap-1 overflow-x-auto no-scrollbar bg-dark-brown shadow-[var(--shadow-card)] sticky top-[56px] z-10">
       {categories.map((cat) => (
@@ -19,7 +22,7 @@ export default function CategoryTabs({ categories, activeId, onSelect }: Categor
               : 'text-text-hint border-b-[3px] border-transparent hover:text-primary-light'
           }`}
         >
-          {cat.name}
+          {tMenu('cat', cat.name)}
         </button>
       ))}
     </div>
