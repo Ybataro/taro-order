@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import ErrorFallback from '../customer/components/ErrorFallback';
 
 interface Props {
   children: ReactNode;
@@ -22,17 +23,12 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-bg">
-          <p className="text-5xl mb-4">😵</p>
-          <h1 className="text-lg font-bold text-text-primary mb-2">頁面發生錯誤</h1>
-          <p className="text-sm text-text-secondary mb-6">請重新整理頁面，或回到首頁</p>
-          <button
-            onClick={() => { this.setState({ hasError: false }); window.location.href = '/'; }}
-            className="px-6 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold"
-          >
-            回到首頁
-          </button>
-        </div>
+        <ErrorFallback
+          onReset={() => {
+            this.setState({ hasError: false });
+            window.location.href = '/';
+          }}
+        />
       );
     }
     return this.props.children;

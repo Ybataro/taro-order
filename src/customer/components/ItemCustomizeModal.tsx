@@ -3,7 +3,9 @@ import { X, Plus, Minus } from 'lucide-react';
 import type { MenuItem, CartCustomization, Addon, TemperatureOption } from '../../types';
 import { addonItems, noAddonCategories, getTemperatureOptions } from '../../data/addons';
 import { useCartStore } from '../../stores/cartStore';
+import { useTranslation } from '../../stores/i18nStore';
 import Button from '../../components/ui/Button';
+import ImageViewer from './ImageViewer';
 
 interface Props {
   item: MenuItem;
@@ -12,6 +14,7 @@ interface Props {
 
 export default function ItemCustomizeModal({ item, onClose }: Props) {
   const addItemWithCustomization = useCartStore((s) => s.addItemWithCustomization);
+  const { t } = useTranslation();
 
   const allowAddons = !noAddonCategories.includes(item.categoryId);
   const temperatureOptions = getTemperatureOptions(item.categoryId);
@@ -22,6 +25,7 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
       ? (temperatureOptions.includes('涼' as TemperatureOption) ? '涼' : temperatureOptions[0])
       : null
   );
+  const [showViewer, setShowViewer] = useState(false);
 
   const updateAddon = (addonId: string, delta: number) => {
     setAddonQuantities((prev) => {
@@ -62,7 +66,10 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
         <div className="p-4">
           {/* 品項基本資訊 */}
           <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border">
-            <div className="w-16 h-16 rounded-[12px] bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <div
+              className={`w-16 h-16 rounded-[12px] bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden ${item.image ? 'cursor-pointer' : ''}`}
+              onClick={() => item.image && setShowViewer(true)}
+            >
               {item.image ? (
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
               ) : (
@@ -78,7 +85,7 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
           {/* 溫度選擇 */}
           {temperatureOptions && (
             <div className="mb-5 pb-4 border-b border-border">
-              <h3 className="text-base font-bold text-text-primary mb-3">溫度選擇</h3>
+              <h3 className="text-base font-bold text-text-primary mb-3">{t('customize.temperature')}</h3>
               <div className="flex gap-2">
                 {temperatureOptions.map((opt) => (
                   <button
@@ -90,7 +97,7 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
                         : 'border-border bg-card text-text-secondary hover:border-accent'
                     }`}
                   >
-                    {opt}
+                    {t('temp.' + opt)}
                   </button>
                 ))}
               </div>
@@ -100,7 +107,7 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
           {/* 加購區 */}
           {allowAddons && (
             <div className="mb-4">
-              <h3 className="text-base font-bold text-text-primary mb-3">加購</h3>
+              <h3 className="text-base font-bold text-text-primary mb-3">{t('customize.addons')}</h3>
               <div className="flex flex-col gap-2">
                 {addonItems.map((addon) => {
                   const qty = addonQuantities[addon.id] || 0;
@@ -140,10 +147,14 @@ export default function ItemCustomizeModal({ item, onClose }: Props) {
         {/* 底部確認列 */}
         <div className="sticky bottom-0 bg-card/95 backdrop-blur-sm border-t border-border p-4">
           <Button fullWidth size="lg" onClick={handleConfirm}>
-            加入購物車 NT$ {totalPrice}
+            {t('customize.addToCart', { price: totalPrice })}
           </Button>
         </div>
       </div>
+
+      {showViewer && item.image && (
+        <ImageViewer src={item.image} alt={item.name} onClose={() => setShowViewer(false)} />
+      )}
     </div>
   );
 }

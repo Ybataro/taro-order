@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { useCartStore, getItemUnitPrice } from '../../stores/cartStore';
 import { useOrderStore } from '../../stores/orderStore';
+import { useTranslation } from '../../stores/i18nStore';
 import Button from '../../components/ui/Button';
 import QuantityStepper from '../../components/ui/QuantityStepper';
 import { useState } from 'react';
@@ -17,6 +18,7 @@ function formatCustomization(item: import('../../types').CartItem): string {
 
 export default function CartPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { items, tableNumber, note, paymentMethod, updateQuantity, removeItem, setNote, setPaymentMethod, clearCart } = useCartStore();
   const addOrder = useOrderStore((s) => s.addOrder);
   const generateDailyOrderNumber = useOrderStore((s) => s.generateDailyOrderNumber);
@@ -60,7 +62,7 @@ export default function CartPage() {
       navigate(`/thank-you/${order.id}?n=${displayNumber}`);
     } catch (error) {
       console.error('送出訂單失敗:', error);
-      alert('送出訂單失敗，請重試');
+      alert(t('cart.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -70,25 +72,25 @@ export default function CartPage() {
     <div className="min-h-screen bg-bg pb-32">
       {/* 頂部導航 */}
       <header className="bg-dark-brown shadow-[var(--shadow-card)] h-14 flex items-center px-4 sticky top-0 z-20">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 cursor-pointer" aria-label="返回">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 cursor-pointer" aria-label={t('cart.back')}>
           <ArrowLeft size={24} className="text-primary-light" />
         </button>
-        <h1 className="text-lg font-bold text-primary-light ml-2 font-serif">確認訂單</h1>
+        <h1 className="text-lg font-bold text-primary-light ml-2 font-serif">{t('cart.title')}</h1>
       </header>
 
       <main className="px-4 pt-4">
         {/* 桌號 */}
         <div className="bg-secondary rounded-[12px] p-4 mb-4 text-center">
-          <span className="text-lg font-bold text-primary">第 {tableNumber} 桌的訂單</span>
+          <span className="text-lg font-bold text-primary">{t('cart.tableOrder', { table: tableNumber })}</span>
         </div>
 
         {/* 品項列表 */}
         {items.length === 0 ? (
           <div className="text-center py-12 text-text-hint">
             <span className="text-5xl block mb-4">🛒</span>
-            <p className="text-lg">購物車是空的</p>
+            <p className="text-lg">{t('cart.empty')}</p>
             <Button variant="secondary" className="mt-4" onClick={() => navigate(-1)}>
-              去點餐
+              {t('cart.goOrder')}
             </Button>
           </div>
         ) : (
@@ -96,21 +98,20 @@ export default function CartPage() {
             <div className="flex flex-col gap-3 mb-6">
               {items.map((cartItem) => {
                 const unitPrice = getItemUnitPrice(cartItem);
-                const customText = formatCustomization(cartItem);
                 return (
                   <div key={cartItem.cartItemId} className="bg-card rounded-[12px] shadow-[var(--shadow-card)] p-4">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="text-base font-semibold text-text-primary">{cartItem.menuItem.name}</h3>
-                      <button onClick={() => removeItem(cartItem.cartItemId)} className="p-1 text-text-hint hover:text-error cursor-pointer" aria-label="刪除">
+                      <button onClick={() => removeItem(cartItem.cartItemId)} className="p-1 text-text-hint hover:text-error cursor-pointer" aria-label={t('cart.delete')}>
                         <Trash2 size={18} />
                       </button>
                     </div>
 
                     {/* 客製化標籤 */}
-                    {customText && (
+                    {(cartItem.customization.temperature || cartItem.customization.addons.length > 0) && (
                       <div className="flex flex-wrap gap-1 mb-2">
                         {cartItem.customization.temperature && (
-                          <span className="text-xs bg-info/10 text-info px-2 py-0.5 rounded-full font-medium">{cartItem.customization.temperature}</span>
+                          <span className="text-xs bg-info/10 text-info px-2 py-0.5 rounded-full font-medium">{t('temp.' + cartItem.customization.temperature)}</span>
                         )}
                         {cartItem.customization.addons.map((a) => (
                           <span key={a.addon.id} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
@@ -136,18 +137,18 @@ export default function CartPage() {
 
             {/* 備註欄 */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-text-secondary mb-2">備註（選填）</label>
+              <label className="block text-sm font-semibold text-text-secondary mb-2">{t('cart.noteLabel')}</label>
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="例如：少糖、去冰..."
+                placeholder={t('cart.notePlaceholder')}
                 className="w-full h-20 p-4 border border-border rounded-[8px] bg-card text-base text-text-primary resize-none focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
             {/* 付款方式 */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-text-secondary mb-3">付款方式</label>
+              <label className="block text-sm font-semibold text-text-secondary mb-3">{t('cart.paymentMethod')}</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setPaymentMethod('cash')}
@@ -157,7 +158,7 @@ export default function CartPage() {
                       : 'border-border bg-card text-text-secondary hover:border-accent'
                   }`}
                 >
-                  💵 現場結帳
+                  {t('cart.cash')}
                 </button>
                 <button
                   onClick={() => setPaymentMethod('online')}
@@ -167,7 +168,7 @@ export default function CartPage() {
                       : 'border-border bg-card text-text-secondary hover:border-accent'
                   }`}
                 >
-                  📱 線上付款
+                  {t('cart.online')}
                 </button>
               </div>
             </div>
@@ -179,11 +180,11 @@ export default function CartPage() {
       {items.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-card shadow-[var(--shadow-lg)] p-4 z-30">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-base text-text-secondary">小計</span>
+            <span className="text-base text-text-secondary">{t('cart.subtotal')}</span>
             <span className="text-2xl font-bold text-primary font-['Poppins']">NT$ {total}</span>
           </div>
           <Button fullWidth size="lg" onClick={() => setShowConfirm(true)}>
-            送出訂單 NT$ {total}
+            {t('cart.submit', { total })}
           </Button>
         </div>
       )}
@@ -192,16 +193,16 @@ export default function CartPage() {
       {showConfirm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-6">
           <div className="bg-card rounded-[12px] shadow-[var(--shadow-lg)] p-6 w-full max-w-sm">
-            <h2 className="text-xl font-bold text-text-primary text-center mb-2">確認送出訂單？</h2>
+            <h2 className="text-xl font-bold text-text-primary text-center mb-2">{t('cart.confirmTitle')}</h2>
             <p className="text-text-secondary text-center mb-6">
-              第 {tableNumber} 桌 ・ 共 {items.length} 項 ・ NT$ {total}
+              {t('cart.confirmSummary', { table: tableNumber, count: items.length, total })}
             </p>
             <div className="flex gap-3">
               <Button variant="secondary" fullWidth onClick={() => setShowConfirm(false)} disabled={isSubmitting}>
-                再看看
+                {t('cart.cancel')}
               </Button>
               <Button fullWidth onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? '送出中...' : '確認送出'}
+                {isSubmitting ? t('cart.submitting') : t('cart.confirm')}
               </Button>
             </div>
           </div>

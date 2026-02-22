@@ -2,39 +2,40 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useTranslation } from '../../stores/i18nStore';
 import type { Order } from '../../types';
 import StatusBadge from '../../components/ui/StatusBadge';
 import Button from '../../components/ui/Button';
 
-const steps = [
-  { key: 'preparing', label: '準備中' },
-  { key: 'completed', label: '完成取餐' },
-] as const;
-
-function getStepIndex(status: string): number {
-  if (status === 'pending') return -1;
-  const idx = steps.findIndex((s) => s.key === status);
-  return idx;
-}
-
 export default function OrderStatusPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const steps = [
+    { key: 'preparing', label: t('status.stepPreparing') },
+    { key: 'completed', label: t('status.stepCompleted') },
+  ] as const;
+
+  function getStepIndex(status: string): number {
+    if (status === 'pending') return -1;
+    const idx = steps.findIndex((s) => s.key === status);
+    return idx;
+  }
 
   // 載入單個訂單資料並啟用即時訂閱
   useEffect(() => {
     let mounted = true;
-    let channel: any;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const loadOrder = async () => {
       if (!orderId) return;
-      
+
       try {
         setIsLoading(true);
-        
-        // 直接從 Supabase 查詢這個訂單
+
         const { data, error: fetchError } = await supabase
           .from('orders')
           .select('*')
@@ -63,10 +64,8 @@ export default function OrderStatusPage() {
       }
     };
 
-    // 初始載入
     loadOrder();
 
-    // 訂閱這個訂單的即時更新
     channel = supabase
       .channel(`order-${orderId}`)
       .on(
@@ -104,7 +103,7 @@ export default function OrderStatusPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <span className="text-5xl block mb-4">⏳</span>
-          <p className="text-lg text-text-secondary">載入中...</p>
+          <p className="text-lg text-text-secondary">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -115,13 +114,13 @@ export default function OrderStatusPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <span className="text-5xl block mb-4">🔍</span>
-          <p className="text-lg text-text-secondary">找不到此訂單</p>
-          <p className="text-sm text-text-hint mt-2">訂單編號：{orderId}</p>
+          <p className="text-lg text-text-secondary">{t('status.notFound')}</p>
+          <p className="text-sm text-text-hint mt-2">{t('status.orderNumber')}：{orderId}</p>
           <Button
             className="mt-6"
             onClick={() => navigate('/')}
           >
-            返回首頁
+            {t('common.backToHome')}
           </Button>
         </div>
       </div>
@@ -138,20 +137,20 @@ export default function OrderStatusPage() {
     <div className="min-h-screen bg-bg pb-24">
       {/* 頂部導航 */}
       <header className="bg-dark-brown shadow-[var(--shadow-card)] h-14 flex items-center px-4 sticky top-0 z-20">
-        <button onClick={() => navigate(`/order?table=${order.table_number}`)} className="p-2 -ml-2 cursor-pointer" aria-label="返回菜單">
+        <button onClick={() => navigate(`/order?table=${order.table_number}`)} className="p-2 -ml-2 cursor-pointer" aria-label={t('status.backToMenu')}>
           <ArrowLeft size={24} className="text-primary-light" />
         </button>
-        <h1 className="text-lg font-bold text-primary-light ml-2 font-serif">訂單進度</h1>
+        <h1 className="text-lg font-bold text-primary-light ml-2 font-serif">{t('status.title')}</h1>
       </header>
 
       <main className="px-4 pt-6">
         {/* 訂單編號 & 桌號 */}
         <div className="text-center mb-6">
-          <p className="text-sm text-text-hint">訂單編號</p>
+          <p className="text-sm text-text-hint">{t('status.orderNumber')}</p>
           <p className="text-2xl font-bold text-primary font-['Poppins']">
             #{String(order.display_number || 0).padStart(2, '0')}
           </p>
-          <p className="text-base text-primary font-semibold mt-1">第 {order.table_number} 桌</p>
+          <p className="text-base text-primary font-semibold mt-1">{t('common.table', { table: order.table_number })}</p>
         </div>
 
         {/* 進度條 */}
@@ -159,7 +158,6 @@ export default function OrderStatusPage() {
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => (
               <div key={step.key} className="flex items-center flex-1">
-                {/* 圓點 */}
                 <div className="flex flex-col items-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-500 ${
@@ -176,7 +174,6 @@ export default function OrderStatusPage() {
                     {step.label}
                   </span>
                 </div>
-                {/* 連接線 */}
                 {index < steps.length - 1 && (
                   <div className={`flex-1 h-1 mx-2 rounded-full transition-colors duration-500 ${
                     index < currentStep ? 'bg-primary' : 'bg-border'
@@ -187,18 +184,18 @@ export default function OrderStatusPage() {
           </div>
 
           <div className="text-center pt-2 border-t border-border">
-            <span className="text-sm text-text-secondary">目前狀態：</span>
-            <StatusBadge status={order.status} />
+            <span className="text-sm text-text-secondary">{t('status.currentStatus')}</span>
+            <StatusBadge status={order.status} label={t('badge.' + order.status)} />
           </div>
         </div>
 
         {/* 訂單資訊 */}
         <div className="bg-card rounded-[12px] shadow-[var(--shadow-card)] p-4 mb-6">
-          <p className="text-sm text-text-hint mb-3">下單時間：{createdTime}</p>
+          <p className="text-sm text-text-hint mb-3">{t('status.orderTime')}{createdTime}</p>
 
           <h3 className="text-base font-bold text-text-primary mb-3 flex items-center gap-2">
             <span className="w-1 h-4 bg-primary rounded-full" />
-            訂單內容
+            {t('status.orderContent')}
           </h3>
 
           <div className="flex flex-col gap-2">
@@ -221,19 +218,19 @@ export default function OrderStatusPage() {
           </div>
 
           <div className="flex items-center justify-between pt-3 mt-2 border-t-2 border-border">
-            <span className="font-bold text-text-primary">合計</span>
+            <span className="font-bold text-text-primary">{t('status.total')}</span>
             <span className="text-xl font-bold text-primary font-['Poppins']">
               NT$ {order.total_price}
             </span>
           </div>
 
           <div className="mt-3 text-sm text-text-secondary">
-            付款方式：{order.payment_method === 'cash' ? '💵 現場結帳' : '📱 線上付款'}
+            {t('status.paymentMethod')}{order.payment_method === 'cash' ? t('status.cash') : t('status.online')}
           </div>
 
           {order.notes && (
             <div className="mt-2 text-sm text-text-secondary">
-              備註：{order.notes}
+              {t('status.notes')}{order.notes}
             </div>
           )}
         </div>
@@ -248,7 +245,7 @@ export default function OrderStatusPage() {
           >
             <span className="flex items-center justify-center gap-2">
               <Plus size={20} />
-              我要加點
+              {t('status.addMore')}
             </span>
           </Button>
         )}

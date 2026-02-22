@@ -9,15 +9,16 @@ const config: Record<OrderStatus, { label: string; bg: string; text: string }> =
 
 interface StatusBadgeProps {
   status: OrderStatus;
+  label?: string;
 }
 
 const fallback = { label: '未知', bg: 'bg-border', text: 'text-text-hint' };
 
-export default function StatusBadge({ status }: StatusBadgeProps) {
+export default function StatusBadge({ status, label }: StatusBadgeProps) {
   const c = config[status] || fallback;
   return (
     <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-semibold ${c.bg} ${c.text}`}>
-      {c.label}
+      {label || c.label}
     </span>
   );
 }

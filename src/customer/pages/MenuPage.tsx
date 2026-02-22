@@ -1,22 +1,25 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMenuStore } from '../../stores/menuStore';
 import { useCartStore } from '../../stores/cartStore';
 import { useOrderStore } from '../../stores/orderStore';
+import { useTranslation } from '../../stores/i18nStore';
 import CategoryTabs from '../components/CategoryTabs';
 import MenuCard from '../components/MenuCard';
 import CartFab from '../components/CartFab';
 import Button from '../../components/ui/Button';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function MenuPage() {
   const [searchParams] = useSearchParams();
   const tableNumber = Number(searchParams.get('table')) || 0;
-  const { 
-    categories, 
-    menuItems, 
+  const { t } = useTranslation();
+  const {
+    categories,
+    menuItems,
     fetchCategories,
     fetchMenuItems,
-    fetchAddons 
+    fetchAddons
   } = useMenuStore();
   const setTableNumber = useCartStore((s) => s.setTableNumber);
   const tables = useOrderStore((s) => s.tables);
@@ -36,10 +39,10 @@ export default function MenuPage() {
   // 載入桌位資料並啟用即時訂閱
   useEffect(() => {
     fetchTables();
-    
+
     // 啟用 Supabase 即時訂閱
     const unsubscribe = useOrderStore.getState().subscribeToOrders();
-    
+
     return unsubscribe;
   }, [fetchTables]);
 
@@ -48,10 +51,10 @@ export default function MenuPage() {
     fetchCategories();
     fetchMenuItems();
     fetchAddons();
-    
+
     // 啟用菜單即時訂閱
     const unsubscribe = useMenuStore.getState().subscribeToMenu();
-    
+
     return unsubscribe;
   }, [fetchCategories, fetchMenuItems, fetchAddons]);
 
@@ -77,8 +80,8 @@ export default function MenuPage() {
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center">
           <span className="text-6xl block mb-4">🍠</span>
-          <h1 className="text-2xl font-bold text-primary mb-2 font-serif">阿爸的芋圓</h1>
-          <p className="text-text-secondary">請掃描桌面上的 QR Code 開始點餐</p>
+          <h1 className="text-2xl font-bold text-primary mb-2 font-serif">{t('brand.name')}</h1>
+          <p className="text-text-secondary">{t('menu.scanQrCode')}</p>
         </div>
       </div>
     );
@@ -89,12 +92,12 @@ export default function MenuPage() {
       <div className="min-h-screen bg-bg flex items-center justify-center p-6">
         <div className="bg-card rounded-[12px] shadow-[var(--shadow-md)] p-8 max-w-sm w-full text-center">
           <span className="text-5xl block mb-4">🍽️</span>
-          <h2 className="text-xl font-bold text-text-primary mb-2">第 {tableNumber} 桌</h2>
+          <h2 className="text-xl font-bold text-text-primary mb-2">{t('common.table', { table: tableNumber })}</h2>
           <p className="text-text-secondary mb-6">
-            此桌號目前仍有人用餐中<br />請確定是否繼續點餐
+            {t('menu.tableOccupied')}<br />{t('menu.confirmContinue')}
           </p>
           <Button fullWidth size="lg" onClick={() => setOccupiedConfirmed(true)}>
-            確定繼續點餐
+            {t('menu.continueOrdering')}
           </Button>
         </div>
       </div>
@@ -107,11 +110,14 @@ export default function MenuPage() {
       <header className="bg-dark-brown shadow-[var(--shadow-card)] h-14 flex items-center justify-between px-4 sticky top-0 z-20">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🍠</span>
-          <h1 className="text-lg font-bold text-primary-light font-serif">阿爸的芋圓</h1>
+          <h1 className="text-lg font-bold text-primary-light font-serif">{t('brand.name')}</h1>
         </div>
-        <span className="bg-primary/20 text-primary-light px-3 py-1 rounded-full text-sm font-semibold">
-          第 {tableNumber} 桌
-        </span>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <span className="bg-primary/20 text-primary-light px-3 py-1 rounded-full text-sm font-semibold">
+            {t('common.table', { table: tableNumber })}
+          </span>
+        </div>
       </header>
 
       {/* 分類標籤列 */}
@@ -125,7 +131,7 @@ export default function MenuPage() {
       <main className="px-4 pt-4">
         {categories.length === 0 ? (
           <div className="text-center py-12 text-text-hint">
-            <p className="text-lg">載入中...</p>
+            <p className="text-lg">{t('common.loading')}</p>
           </div>
         ) : (
           <>
@@ -147,7 +153,7 @@ export default function MenuPage() {
 
             {categories.length > 0 && availableItems.length === 0 && activeCategoryId && (
               <div className="text-center py-12 text-text-hint">
-                <p className="text-lg">此分類目前沒有品項</p>
+                <p className="text-lg">{t('menu.noItems')}</p>
               </div>
             )}
           </>
@@ -159,4 +165,3 @@ export default function MenuPage() {
     </div>
   );
 }
-

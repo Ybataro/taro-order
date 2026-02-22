@@ -1,7 +1,9 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { MenuItem } from '../../types';
+import { useTranslation } from '../../stores/i18nStore';
 import ItemCustomizeModal from './ItemCustomizeModal';
+import ImageViewer from './ImageViewer';
 
 interface MenuCardProps {
   item: MenuItem;
@@ -19,12 +21,17 @@ const tagStyle = (tag: string): string => {
 
 export default function MenuCard({ item }: MenuCardProps) {
   const [showModal, setShowModal] = useState(false);
+  const [showViewer, setShowViewer] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <>
       <div className="bg-card rounded-[12px] shadow-[var(--shadow-card)] p-4 flex gap-4 items-center">
         {/* 品項圖片 */}
-        <div className="w-20 h-20 rounded-[8px] bg-secondary flex-shrink-0 flex items-center justify-center overflow-hidden">
+        <div
+          className={`w-20 h-20 rounded-[8px] bg-secondary flex-shrink-0 flex items-center justify-center overflow-hidden ${item.image ? 'cursor-pointer' : ''}`}
+          onClick={() => item.image && setShowViewer(true)}
+        >
           {item.image ? (
             <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
           ) : (
@@ -39,7 +46,7 @@ export default function MenuCard({ item }: MenuCardProps) {
             <div className="flex flex-wrap gap-1 mt-1">
               {item.tags.map(tag => (
                 <span key={tag} className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${tagStyle(tag)}`}>
-                  {tag}
+                  {t('tag.' + tag)}
                 </span>
               ))}
             </div>
@@ -52,10 +59,10 @@ export default function MenuCard({ item }: MenuCardProps) {
             <button
               onClick={() => setShowModal(true)}
               className="h-9 px-4 bg-primary text-white rounded-[8px] flex items-center gap-1 text-sm font-semibold hover:bg-primary-dark transition-colors cursor-pointer active:scale-95"
-              aria-label={`加入 ${item.name}`}
+              aria-label={`${t('menu.add')} ${item.name}`}
             >
               <Plus size={16} />
-              加入
+              {t('menu.add')}
             </button>
           </div>
         </div>
@@ -63,6 +70,10 @@ export default function MenuCard({ item }: MenuCardProps) {
 
       {showModal && (
         <ItemCustomizeModal item={item} onClose={() => setShowModal(false)} />
+      )}
+
+      {showViewer && item.image && (
+        <ImageViewer src={item.image} alt={item.name} onClose={() => setShowViewer(false)} />
       )}
     </>
   );

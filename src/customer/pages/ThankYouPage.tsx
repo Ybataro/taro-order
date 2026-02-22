@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
+import { useTranslation } from '../../stores/i18nStore';
 import Button from '../../components/ui/Button';
 
 export default function ThankYouPage() {
@@ -8,6 +9,7 @@ export default function ThankYouPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const displayNumber = searchParams.get('n');
+  const { t } = useTranslation();
 
   // 3秒後自動跳轉到訂單狀態頁面
   useEffect(() => {
@@ -35,20 +37,20 @@ export default function ThankYouPage() {
 
         {/* 感謝訊息 */}
         <h1 className="text-3xl font-bold text-primary mb-4 font-serif">
-          阿爸的芋圓
+          {t('brand.name')}
         </h1>
         <p className="text-xl text-text-primary mb-2 font-semibold">
-          感謝您的點餐！
+          {t('thanks.title')}
         </p>
         <p className="text-base text-text-secondary mb-8">
-          我們已收到您的訂單<br />
-          廚房正在努力為您準備中...
+          {t('thanks.received')}<br />
+          {t('thanks.preparing')}
         </p>
 
         {/* 訂單編號 */}
         {orderId && (
           <div className="bg-card rounded-xl shadow-md p-4 mb-6">
-            <p className="text-sm text-text-hint mb-1">您的訂單編號</p>
+            <p className="text-sm text-text-hint mb-1">{t('thanks.orderNumber')}</p>
             <p className="text-2xl font-bold text-primary font-['Poppins']">
               #{String(displayNumber || '0').padStart(2, '0')}
             </p>
@@ -57,7 +59,7 @@ export default function ThankYouPage() {
 
         {/* 提示訊息 */}
         <p className="text-sm text-text-hint mb-6">
-          頁面將自動跳轉至訂單狀態頁面...
+          {t('thanks.redirecting')}
         </p>
 
         {/* 立即查看按鈕 */}
@@ -67,7 +69,7 @@ export default function ThankYouPage() {
           size="lg"
           onClick={() => orderId && navigate(`/status/${orderId}`)}
         >
-          立即查看訂單狀態
+          {t('thanks.viewStatus')}
         </Button>
       </div>
     </div>
