@@ -3,6 +3,7 @@ import { Plus, Pencil, Eye, EyeOff, Trash2, X, Upload, ChevronDown, ChevronUp } 
 import { useMenuStore } from '../../stores/menuStore';
 import type { MenuItem } from '../../types';
 import Button from '../../components/ui/Button';
+import { translateText } from '../../lib/translate';
 
 const AVAILABLE_TAGS = ['招牌', '熱銷', '新品', '季節限定'];
 
@@ -89,6 +90,33 @@ export default function MenuManagePage() {
   };
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const handleAutoTranslate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!formData.name.trim() || isTranslating) return;
+    setIsTranslating(true);
+    try {
+      const [nameEn, nameJa, descEn, descJa] = await Promise.all([
+        translateText(formData.name, 'en'),
+        translateText(formData.name, 'ja'),
+        formData.description.trim() ? translateText(formData.description, 'en') : Promise.resolve(''),
+        formData.description.trim() ? translateText(formData.description, 'ja') : Promise.resolve(''),
+      ]);
+      setFormData((prev) => ({
+        ...prev,
+        nameEn,
+        nameJa,
+        descriptionEn: descEn,
+        descriptionJa: descJa,
+      }));
+      setShowI18n(true);
+    } catch {
+      alert('翻譯失敗，請稍後再試');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!formData.name || formData.price <= 0) return;
@@ -317,14 +345,23 @@ export default function MenuManagePage() {
 
               {/* 翻譯區塊 */}
               <div className="border border-border rounded-[8px] overflow-hidden">
-                <button
-                  type="button"
+                <div
                   onClick={() => setShowI18n(!showI18n)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 hover:bg-secondary text-sm font-semibold text-text-secondary cursor-pointer"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/50 hover:bg-secondary text-sm font-semibold text-text-secondary cursor-pointer select-none"
                 >
                   <span>🌐 翻譯（English / 日本語）</span>
-                  {showI18n ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAutoTranslate}
+                      disabled={!formData.name.trim() || isTranslating}
+                      className="px-3 py-1 rounded-full text-xs font-semibold bg-primary text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors cursor-pointer"
+                    >
+                      {isTranslating ? '翻譯中...' : '自動翻譯'}
+                    </button>
+                    {showI18n ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </div>
+                </div>
                 {showI18n && (
                   <div className="p-4 flex flex-col gap-3">
                     <div>
