@@ -7,11 +7,21 @@ import OrderStatusPage from './customer/pages/OrderStatusPage';
 import ThankYouPage from './customer/pages/ThankYouPage';
 import AdminLayout from './admin/layout/AdminLayout';
 import AdminAuth from './admin/components/AdminAuth';
+import RoleGuard from './admin/components/RoleGuard';
 import OrdersPage from './admin/pages/OrdersPage';
 import MenuManagePage from './admin/pages/MenuManagePage';
 import TablesPage from './admin/pages/TablesPage';
 import QRCodePage from './admin/pages/QRCodePage';
 import AnalyticsPage from './admin/pages/AnalyticsPage';
+import AccountsPage from './admin/pages/AccountsPage';
+import { useAuthStore } from './stores/authStore';
+import { getDefaultPage } from './admin/constants/permissions';
+
+function AdminIndex() {
+  const user = useAuthStore((s) => s.user);
+  const target = user ? getDefaultPage(user.role) : '/admin/orders';
+  return <Navigate to={target} replace />;
+}
 
 export default function App() {
   return (
@@ -26,12 +36,13 @@ export default function App() {
 
         {/* 店家後台路由 */}
         <Route path="/admin" element={<AdminAuth><AdminLayout /></AdminAuth>}>
-          <Route index element={<Navigate to="/admin/orders" replace />} />
+          <Route index element={<AdminIndex />} />
           <Route path="orders" element={<OrdersPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="menu" element={<MenuManagePage />} />
+          <Route path="analytics" element={<RoleGuard path="analytics"><AnalyticsPage /></RoleGuard>} />
+          <Route path="menu" element={<RoleGuard path="menu"><MenuManagePage /></RoleGuard>} />
           <Route path="tables" element={<TablesPage />} />
-          <Route path="qrcode" element={<QRCodePage />} />
+          <Route path="qrcode" element={<RoleGuard path="qrcode"><QRCodePage /></RoleGuard>} />
+          <Route path="accounts" element={<RoleGuard path="accounts"><AccountsPage /></RoleGuard>} />
         </Route>
 
         {/* 首頁導向 */}
