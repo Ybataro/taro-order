@@ -42,7 +42,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       
       // 讀取主分類
       const { data: categoriesData, error: catError } = await supabase
-        .from('categories')
+        .from('taro_categories')
         .select('*')
         .order('sort_order', { ascending: true });
 
@@ -50,7 +50,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
 
       // 讀取子分類
       const { data: subcategoriesData, error: subError } = await supabase
-        .from('subcategories')
+        .from('taro_subcategories')
         .select('*')
         .order('sort_order', { ascending: true });
 
@@ -90,7 +90,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       set({ isLoading: true });
       
       const { data, error } = await supabase
-        .from('menu_items')
+        .from('taro_menu_items')
         .select('*')
         .order('category_id', { ascending: true });
 
@@ -156,7 +156,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   addMenuItem: async (item) => {
     try {
       const { error } = await supabase
-        .from('menu_items')
+        .from('taro_menu_items')
         .insert([{
           id: `m${Date.now()}`,
           name: item.name,
@@ -221,7 +221,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       if (updates.comboItems !== undefined) dbUpdates.combo_items = updates.comboItems;
 
       const { error } = await supabase
-        .from('menu_items')
+        .from('taro_menu_items')
         .update(dbUpdates)
         .eq('id', id);
 
@@ -244,7 +244,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       if (!item) return;
 
       const { error } = await supabase
-        .from('menu_items')
+        .from('taro_menu_items')
         .update({ is_available: !item.isAvailable })
         .eq('id', id);
 
@@ -264,7 +264,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   deleteMenuItem: async (id) => {
     try {
       const { error } = await supabase
-        .from('menu_items')
+        .from('taro_menu_items')
         .delete()
         .eq('id', id);
 
@@ -287,7 +287,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
 
       // 找出有設定限量、但 reset_date 不是今天的品項
       const { data, error } = await supabase
-        .from('menu_items')
+        .from('taro_menu_items')
         .select('id, daily_limit')
         .not('daily_limit', 'is', null)
         .neq('stock_reset_date', todayTW);
@@ -298,7 +298,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       // 批次更新：重置庫存 + 重新上架
       for (const item of data) {
         await supabase
-          .from('menu_items')
+          .from('taro_menu_items')
           .update({
             current_stock: item.daily_limit,
             stock_reset_date: todayTW,
@@ -323,7 +323,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       if (qty > 0) updates.is_available = true;
 
       const { error } = await supabase
-        .from('menu_items')
+        .from('taro_menu_items')
         .update(updates)
         .eq('id', id);
 
@@ -344,21 +344,21 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       .channel('menu-changes')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'menu_items' },
+        { event: '*', schema: 'public', table: 'taro_menu_items' },
         () => {
           get().fetchMenuItems();
         }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'categories' },
+        { event: '*', schema: 'public', table: 'taro_categories' },
         () => {
           get().fetchCategories();
         }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'subcategories' },
+        { event: '*', schema: 'public', table: 'taro_subcategories' },
         () => {
           get().fetchCategories();
         }
