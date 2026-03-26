@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { getTaiwanToday } from '../lib/date';
 
 interface SystemState {
   lastShiftResetTime: string | null;
@@ -27,20 +26,20 @@ export const useSystemStore = create<SystemState>((set, get) => ({
   fetchLastShiftResetTime: async () => {
     try {
       const { data, error } = await supabase
-        .from('taro_system_settings')
+        .from('system_settings')
         .select('setting_value')
         .eq('setting_key', 'last_shift_reset_time')
         .single();
 
       if (error) throw error;
 
-      const time = data?.setting_value || getTaiwanToday();
+      const time = data?.setting_value || new Date().toISOString().split('T')[0];
       set({ lastShiftResetTime: time });
       return time;
     } catch (error) {
       console.error('獲取交班時間失敗:', error);
-      // 如果獲取失敗，返回今天日期
-      const today = getTaiwanToday();
+      // 如果獲取失敗，返回今天 00:00
+      const today = new Date().toISOString().split('T')[0];
       set({ lastShiftResetTime: today });
       return today;
     }
@@ -52,7 +51,7 @@ export const useSystemStore = create<SystemState>((set, get) => ({
       const resetTime = time || new Date().toISOString();
       
       const { error } = await supabase
-        .from('taro_system_settings')
+        .from('system_settings')
         .update({ setting_value: resetTime })
         .eq('setting_key', 'last_shift_reset_time');
 
@@ -87,7 +86,7 @@ export const useSystemStore = create<SystemState>((set, get) => ({
         : new Date(lastResetTime).toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 
       // 取得台灣時區的今天日期
-      const todayTW = getTaiwanToday();
+      const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
 
       // 如果最後交班日期不是今天，表示過了 00:00，需要自動交班
       if (lastResetDate < todayTW) {

@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const hash = await sha256(password);
       const { data, error } = await supabase
-        .from('taro_admin_users')
+        .from('admin_users')
         .select('id, username, role, is_active, created_at, updated_at')
         .eq('username', username)
         .eq('password_hash', hash)
@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ loading: true });
     try {
       const { data, error } = await supabase
-        .from('taro_admin_users')
+        .from('admin_users')
         .select('id, username, role, is_active, created_at, updated_at')
         .order('created_at', { ascending: true });
 
@@ -97,7 +97,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const hash = await sha256(password);
       const { error } = await supabase
-        .from('taro_admin_users')
+        .from('admin_users')
         .insert({ username, password_hash: hash, role });
 
       if (error) {
@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (data.password) updates.password_hash = await sha256(data.password);
 
       const { error } = await supabase
-        .from('taro_admin_users')
+        .from('admin_users')
         .update(updates)
         .eq('id', id);
 
@@ -151,7 +151,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   deleteUser: async (id) => {
     try {
       const { error } = await supabase
-        .from('taro_admin_users')
+        .from('admin_users')
         .delete()
         .eq('id', id);
 
