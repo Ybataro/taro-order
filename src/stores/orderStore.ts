@@ -1,5 +1,6 @@
 ﻿import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { getTaiwanToday, getTaiwanDayStart, getTaiwanDayEnd } from '../lib/date';
 import type { Order, Table, OrderStatus } from '../types';
 
 interface OrderState {
@@ -32,7 +33,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       set({ loading: true });
       
       let query = supabase
-        .from('orders')
+        .from('taro_orders')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -61,7 +62,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   fetchTables: async () => {
     try {
       const { data, error } = await supabase
-        .from('tables')
+        .from('taro_tables')
         .select('*')
         .order('table_number', { ascending: true });
 
@@ -76,7 +77,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   // 新增訂單
   addOrder: async (order: Order) => {
     try {
-      const { error } = await supabase.from('orders').insert([
+      const { error } = await supabase.from('taro_orders').insert([
         {
           id: order.id,
           display_number: order.display_number || 0,
@@ -101,14 +102,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
               p_qty: item.quantity,
             })
           )
-        ).catch((err) => console.error('扣庫存失敗:', err));
+        ).then((results) => {
+          results.forEach((r, i) => {
+            if (r.status === 'rejected') {
+              console.error(`扣庫存失敗 [${order.items[i].menuItemId}]:`, r.reason);
+            }
+          });
+        });
       }
 
-      // 更新桌位狀態
+      // 更新桌位狀態（realtime 會同步訂單列表）
       await get().occupyTable(order.table_number);
-
-      // 重新載入訂單列表
-      await get().fetchOrders();
     } catch (error) {
       console.error('Error adding order:', error);
       throw error;
@@ -119,23 +123,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   updateOrderStatus: async (orderId: string, status: OrderStatus) => {
     try {
       const { error } = await supabase
-        .from('orders')
+        .from('taro_orders')
         .update({ status })
         .eq('id', orderId);
 
       if (error) throw error;
 
-      // 如果訂單取消，清空桌位
-      // 注意：訂單完成時不自動清桌，需要手動清桌
+      // 如果訂單取消，清空桌位（realtime 會同步訂單列表）
       if (status === 'cancelled') {
         const order = get().orders.find((o) => o.id === orderId);
         if (order) {
           await get().clearTable(order.table_number);
         }
       }
-
-      // 重新載入訂單列表
-      await get().fetchOrders();
     } catch (error) {
       console.error('Error updating order status:', error);
       throw error;
@@ -146,7 +146,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   occupyTable: async (tableNumber: number) => {
     try {
       const { error } = await supabase
-        .from('tables')
+        .from('taro_tables')
         .update({ status: 'occupied' })
         .eq('table_number', tableNumber);
 
@@ -162,7 +162,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   clearTable: async (tableNumber: number) => {
     try {
       const { error } = await supabase
-        .from('tables')
+        .from('taro_tables')
         .update({ status: 'available', current_order_id: null })
         .eq('table_number', tableNumber);
 
@@ -193,7 +193,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         {
           event: '*',
           schema: 'public',
-          table: 'orders',
+          table: 'taro_orders',
         },
         (payload) => {
           try {
@@ -221,7 +221,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         {
           event: '*',
           schema: 'public',
-          table: 'tables',
+          table: 'taro_tables',
         },
         () => {
           get().fetchTables();
@@ -242,7 +242,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   fetchOrderHistory: async (startDate?: string, endDate?: string) => {
     try {
       let query = supabase
-        .from('order_history')
+        .from('taro_order_history')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -271,7 +271,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     try {
       // 獨立查詢當前訂單（不影響全域 state）
       let currentQuery = supabase
-        .from('orders')
+        .from('taro_orders')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -313,13 +313,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       const id = crypto.randomUUID();
 
       // 取得台灣時區今日日期範圍
-      const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
-      const todayStart = `${todayTW}T00:00:00+08:00`;
-      const todayEnd = `${todayTW}T23:59:59+08:00`;
+      const todayStart = getTaiwanDayStart();
+      const todayEnd = getTaiwanDayEnd();
 
       // 查詢今日最大 display_number
       const { data, error } = await supabase
-        .from('orders')
+        .from('taro_orders')
         .select('display_number')
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd)
@@ -331,7 +330,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         return { id, displayNumber: 1 };
       }
 
-      const maxNum = data && data.length > 0 ? (data[0].display_number || 0) : 0;
+      const maxNum = data?.[0]?.display_number ?? 0;
       return { id, displayNumber: maxNum + 1 };
     } catch (error) {
       console.error('Error generating order number:', error);
@@ -352,7 +351,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       // 重置所有桌位為可用
       const { error: updateError } = await supabase
-        .from('tables')
+        .from('taro_tables')
         .update({ status: 'available', current_order_id: null })
         .neq('table_number', 0); // 更新所有記錄
 
@@ -362,9 +361,9 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }
 
       // 更新交班時間為今天的日期（YYYY-MM-DD，台灣時區）
-      const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+      const todayTW = getTaiwanToday();
       const { error: settingError } = await supabase
-        .from('system_settings')
+        .from('taro_system_settings')
         .update({ setting_value: todayTW })
         .eq('setting_key', 'last_shift_reset_time');
 
@@ -373,8 +372,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }
 
       // 重新載入今天 00:00（台灣時區）之後的訂單
-      const todayStartTW = `${todayTW}T00:00:00+08:00`;
-      await get().fetchOrders(todayStartTW);
+      await get().fetchOrders(getTaiwanDayStart(todayTW));
       await get().fetchTables();
 
     } catch (error) {

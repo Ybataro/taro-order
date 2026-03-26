@@ -1,6 +1,7 @@
 ﻿import { create } from 'zustand';
 import type { Category, MenuItem, Addon } from '../types';
 import { supabase } from '../lib/supabase';
+import { getTaiwanToday } from '../lib/date';
 
 interface MenuState {
   categories: Category[];
@@ -130,7 +131,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   fetchAddons: async () => {
     try {
       const { data, error } = await supabase
-        .from('addons')
+        .from('taro_addons')
         .select('*')
         .order('name', { ascending: true });
 
@@ -173,9 +174,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
           tags: item.tags || [],
           daily_limit: item.dailyLimit ?? null,
           current_stock: item.dailyLimit ?? null,
-          stock_reset_date: item.dailyLimit != null
-            ? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' })
-            : null,
+          stock_reset_date: item.dailyLimit != null ? getTaiwanToday() : null,
           is_combo: item.isCombo ?? false,
           combo_items: item.comboItems ?? null,
         }])
@@ -183,9 +182,6 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         .single();
 
       if (error) throw error;
-
-      // 即時更新會自動觸發，這裡只是備用
-      await get().fetchMenuItems();
     } catch (error) {
       console.error('新增菜單品項失敗:', error);
       throw error;
@@ -197,7 +193,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   // ============================================
   updateMenuItem: async (id, updates) => {
     try {
-      const dbUpdates: any = {};
+      const dbUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.nameEn !== undefined) dbUpdates.name_en = updates.nameEn || null;
       if (updates.nameJa !== undefined) dbUpdates.name_ja = updates.nameJa || null;
@@ -213,9 +209,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       if (updates.dailyLimit !== undefined) {
         dbUpdates.daily_limit = updates.dailyLimit;
         dbUpdates.current_stock = updates.dailyLimit;
-        dbUpdates.stock_reset_date = updates.dailyLimit != null
-          ? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' })
-          : null;
+        dbUpdates.stock_reset_date = updates.dailyLimit != null ? getTaiwanToday() : null;
       }
       if (updates.isCombo !== undefined) dbUpdates.is_combo = updates.isCombo;
       if (updates.comboItems !== undefined) dbUpdates.combo_items = updates.comboItems;
@@ -226,9 +220,6 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         .eq('id', id);
 
       if (error) throw error;
-
-      // 即時更新會自動觸發，這裡只是備用
-      await get().fetchMenuItems();
     } catch (error) {
       console.error('更新菜單品項失敗:', error);
       throw error;
@@ -249,9 +240,6 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         .eq('id', id);
 
       if (error) throw error;
-
-      // 即時更新會自動觸發，這裡只是備用
-      await get().fetchMenuItems();
     } catch (error) {
       console.error('切換上架狀態失敗:', error);
       throw error;
@@ -269,9 +257,6 @@ export const useMenuStore = create<MenuState>((set, get) => ({
         .eq('id', id);
 
       if (error) throw error;
-
-      // 即時更新會自動觸發，這裡只是備用
-      await get().fetchMenuItems();
     } catch (error) {
       console.error('刪除菜單品項失敗:', error);
       throw error;
@@ -283,7 +268,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   // ============================================
   resetStaleStocks: async () => {
     try {
-      const todayTW = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' });
+      const todayTW = getTaiwanToday();
 
       // 找出有設定限量、但 reset_date 不是今天的品項
       const { data, error } = await supabase
@@ -319,7 +304,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   // ============================================
   setManualStock: async (id, qty) => {
     try {
-      const updates: any = { current_stock: qty };
+      const updates: Record<string, unknown> = { current_stock: qty };
       if (qty > 0) updates.is_available = true;
 
       const { error } = await supabase
@@ -365,7 +350,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'addons' },
+        { event: '*', schema: 'public', table: 'taro_addons' },
         () => {
           get().fetchAddons();
         }

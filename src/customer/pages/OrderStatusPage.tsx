@@ -37,7 +37,7 @@ export default function OrderStatusPage() {
         setIsLoading(true);
 
         const { data, error: fetchError } = await supabase
-          .from('orders')
+          .from('taro_orders')
           .select('*')
           .eq('id', orderId)
           .single();
@@ -73,7 +73,7 @@ export default function OrderStatusPage() {
         {
           event: '*',
           schema: 'public',
-          table: 'orders',
+          table: 'taro_orders',
           filter: `id=eq.${orderId}`,
         },
         (payload) => {
