@@ -192,7 +192,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         'postgres_changes',
         {
           event: '*',
-          schema: 'public',
+          schema: 'taro',
           table: 'orders',
         },
         (payload) => {
@@ -220,7 +220,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         'postgres_changes',
         {
           event: '*',
-          schema: 'public',
+          schema: 'taro',
           table: 'tables',
         },
         () => {

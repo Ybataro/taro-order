@@ -344,28 +344,28 @@ export const useMenuStore = create<MenuState>((set, get) => ({
       .channel('menu-changes')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'menu_items' },
+        { event: '*', schema: 'taro', table: 'menu_items' },
         () => {
           get().fetchMenuItems();
         }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'categories' },
+        { event: '*', schema: 'taro', table: 'categories' },
         () => {
           get().fetchCategories();
         }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'subcategories' },
+        { event: '*', schema: 'taro', table: 'subcategories' },
         () => {
           get().fetchCategories();
         }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'addons' },
+        { event: '*', schema: 'taro', table: 'addons' },
         () => {
           get().fetchAddons();
         }

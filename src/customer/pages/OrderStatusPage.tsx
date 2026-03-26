@@ -72,7 +72,7 @@ export default function OrderStatusPage() {
         'postgres_changes',
         {
           event: '*',
-          schema: 'public',
+          schema: 'taro',
           table: 'orders',
           filter: `id=eq.${orderId}`,
         },

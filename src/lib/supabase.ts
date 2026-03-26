@@ -8,6 +8,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  db: {
+    schema: 'taro',
+  },
   realtime: {
     params: {
       eventsPerSecond: 10,
